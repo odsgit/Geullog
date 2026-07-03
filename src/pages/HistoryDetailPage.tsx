@@ -7,6 +7,7 @@ import { GenerationResult } from '@/components/GenerationResult'
 export function HistoryDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [initialText, setInitialText] = useState<string | null>(null)
+  const [initialIsPublic, setInitialIsPublic] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export function HistoryDetailPage() {
       }
 
       setInitialText(versions?.[0]?.output_text ?? generation.output_text ?? '')
+      setInitialIsPublic(generation.is_public)
     }
 
     load()
@@ -47,7 +49,12 @@ export function HistoryDetailPage() {
 
         {initialText !== null && id && (
           <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-            <GenerationResult key={id} generationId={id} initialText={initialText} />
+            <GenerationResult
+              key={id}
+              generationId={id}
+              initialText={initialText}
+              initialIsPublic={initialIsPublic}
+            />
           </div>
         )}
       </main>

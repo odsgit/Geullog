@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { RichTextEditor, type RichTextEditorHandle } from '@/components/RichTextEditor'
 import { exportAsTxt, exportAsDocx } from '@/lib/export'
+import { trackEvent } from '@/lib/analytics'
 
 type ActionMode = 'regenerate' | 'more_casual' | 'more_formal'
 
@@ -16,6 +17,7 @@ interface StreamEvent {
 interface GenerationResultProps {
   generationId: string
   initialText: string
+  initialIsPublic?: boolean
 }
 
 const actionLabels: Record<ActionMode, string> = {
@@ -24,11 +26,17 @@ const actionLabels: Record<ActionMode, string> = {
   more_formal: '더 격식있게',
 }
 
-export function GenerationResult({ generationId, initialText }: GenerationResultProps) {
+export function GenerationResult({
+  generationId,
+  initialText,
+  initialIsPublic = false,
+}: GenerationResultProps) {
   const editorRef = useRef<RichTextEditorHandle>(null)
   const [busy, setBusy] = useState<ActionMode | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [remainingCredits, setRemainingCredits] = useState<number | null>(null)
+  const [isPublic, setIsPublic] = useState(initialIsPublic)
+  const [shareCopied, setShareCopied] = useState(false)
 
   async function runAction(mode: ActionMode) {
     setBusy(mode)
@@ -103,6 +111,33 @@ export function GenerationResult({ generationId, initialText }: GenerationResult
     exportAsDocx('geullog-generation', editorRef.current?.getJSON() ?? { type: 'doc', content: [] })
   }
 
+  async function handleShare() {
+    const { error: updateError } = await supabase
+      .from('generations')
+      .update({ is_public: true })
+      .eq('id', generationId)
+
+    if (updateError) {
+      setError('공유 링크 생성에 실패했습니다')
+      return
+    }
+
+    setIsPublic(true)
+    await navigator.clipboard.writeText(`${window.location.origin}/share/${generationId}`)
+    setShareCopied(true)
+    trackEvent('share_clicked', { generation_id: generationId })
+    setTimeout(() => setShareCopied(false), 2000)
+  }
+
+  async function handleUnpublish() {
+    const { error: updateError } = await supabase
+      .from('generations')
+      .update({ is_public: false })
+      .eq('id', generationId)
+
+    if (!updateError) setIsPublic(false)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <RichTextEditor ref={editorRef} content={initialText} />
@@ -136,6 +171,23 @@ export function GenerationResult({ generationId, initialText }: GenerationResult
         >
           .docx 내보내기
         </button>
+        <div className="mx-1 h-full w-px self-stretch bg-gray-100" />
+        <button
+          type="button"
+          onClick={handleShare}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          {shareCopied ? '링크가 복사되었습니다!' : isPublic ? '공유 링크 복사' : '공유하기'}
+        </button>
+        {isPublic && (
+          <button
+            type="button"
+            onClick={handleUnpublish}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-400 transition-colors hover:bg-gray-50"
+          >
+            비공개로 전환
+          </button>
+        )}
       </div>
 
       {remainingCredits !== null && (

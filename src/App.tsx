@@ -5,6 +5,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage'
+import { SharePage } from '@/pages/SharePage'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/share/:id" element={<SharePage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
