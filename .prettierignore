@@ -1,3 +1,6 @@
 dist
 node_modules
 .wrangler
+supabase/migrations
+supabase/.temp
+src/types/supabase.ts
