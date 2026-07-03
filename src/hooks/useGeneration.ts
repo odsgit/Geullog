@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { GenerationFormValues } from '@/lib/generationSchema'
 
-type Status = 'idle' | 'streaming' | 'done' | 'error'
+type Status = 'idle' | 'analyzing_image' | 'streaming' | 'done' | 'error'
 
 interface StreamEvent {
+  status?: 'analyzing_image'
   delta?: string
   done?: boolean
   remainingCredits?: number
@@ -68,7 +69,11 @@ export function useGeneration() {
         if (!line.startsWith('data: ')) continue
         const payload: StreamEvent = JSON.parse(line.slice('data: '.length))
 
+        if (payload.status === 'analyzing_image') {
+          setStatus('analyzing_image')
+        }
         if (payload.delta) {
+          setStatus('streaming')
           setOutput((prev) => prev + payload.delta)
         }
         if (payload.error) {

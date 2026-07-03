@@ -49,17 +49,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   const openai = new OpenAI({ apiKey: context.env.OPENAI_API_KEY })
-  const { system, user: userPrompt } = buildPrompt(input)
-
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    stream: true,
-    stream_options: { include_usage: true },
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: userPrompt },
-    ],
-  })
 
   const encoder = new TextEncoder()
   let fullText = ''
@@ -68,6 +57,45 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const readable = new ReadableStream({
     async start(controller) {
       try {
+        let imageDescription: string | null = null
+
+        if (input.inputImageUrls.length > 0) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ status: 'analyzing_image' })}\n\n`),
+          )
+
+          const visionResponse = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: '이 사진에 무엇이 담겨 있는지 글쓰기에 참고할 수 있도록 자세히 설명해주세요.',
+                  },
+                  { type: 'image_url', image_url: { url: input.inputImageUrls[0] } },
+                ],
+              },
+            ],
+          })
+
+          imageDescription = visionResponse.choices[0]?.message?.content ?? null
+          tokensUsed += visionResponse.usage?.total_tokens ?? 0
+        }
+
+        const { system, user: userPrompt } = buildPrompt(input, imageDescription)
+
+        const stream = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          stream: true,
+          stream_options: { include_usage: true },
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: userPrompt },
+          ],
+        })
+
         for await (const chunk of stream) {
           const delta = chunk.choices[0]?.delta?.content
           if (delta) {
@@ -75,13 +103,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ delta })}\n\n`))
           }
           if (chunk.usage) {
-            tokensUsed = chunk.usage.total_tokens
+            tokensUsed += chunk.usage.total_tokens
           }
         }
 
         const { data: recorded, error: recordError } = await supabase.rpc('record_generation', {
           p_input_text: input.inputText,
-          p_input_image_urls: [],
+          p_input_image_urls: input.inputImageUrls,
           p_doc_type: input.docType,
           p_style: input.style,
           p_tone: input.tone,
