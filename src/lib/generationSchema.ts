@@ -61,3 +61,11 @@ export const generationFormSchema = z.object({
 })
 
 export type GenerationFormValues = z.infer<typeof generationFormSchema>
+
+export const regenerateRequestSchema = z.object({
+  generationId: z.string(),
+  mode: z.enum(['regenerate', 'more_casual', 'more_formal']),
+  currentText: z.string().optional(),
+})
+
+export type RegenerateRequest = z.infer<typeof regenerateRequestSchema>

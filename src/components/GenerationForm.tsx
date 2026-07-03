@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
 import { ImageUpload } from '@/components/ImageUpload'
+import { GenerationResult } from '@/components/GenerationResult'
 import { useGeneration } from '@/hooks/useGeneration'
 import {
   docTypeOptions,
@@ -25,7 +26,7 @@ export function GenerationForm() {
     resolver: zodResolver(generationFormSchema),
     defaultValues: { inputImageUrls: [] },
   })
-  const { output, status, error, remainingCredits, generate } = useGeneration()
+  const { output, status, error, remainingCredits, generationId, generate } = useGeneration()
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -105,19 +106,25 @@ export function GenerationForm() {
         </button>
       </form>
 
-      {(output || status === 'error' || status === 'analyzing_image') && (
+      {status === 'done' && generationId ? (
         <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {status === 'analyzing_image' && (
-            <p className="text-sm text-gray-400">사진을 분석하고 있어요...</p>
-          )}
-          {output && (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">{output}</p>
-          )}
-          {status === 'done' && remainingCredits !== null && (
-            <p className="mt-4 text-xs text-gray-400">남은 크레딧: {remainingCredits}</p>
-          )}
+          <GenerationResult key={generationId} generationId={generationId} initialText={output} />
         </div>
+      ) : (
+        (output || status === 'error' || status === 'analyzing_image') && (
+          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            {status === 'analyzing_image' && (
+              <p className="text-sm text-gray-400">사진을 분석하고 있어요...</p>
+            )}
+            {output && (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">{output}</p>
+            )}
+            {status === 'done' && remainingCredits !== null && (
+              <p className="mt-4 text-xs text-gray-400">남은 크레딧: {remainingCredits}</p>
+            )}
+          </div>
+        )
       )}
     </div>
   )

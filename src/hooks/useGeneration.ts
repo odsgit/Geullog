@@ -8,6 +8,7 @@ interface StreamEvent {
   status?: 'analyzing_image'
   delta?: string
   done?: boolean
+  generationId?: string
   remainingCredits?: number
   error?: string
 }
@@ -17,10 +18,12 @@ export function useGeneration() {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
   const [remainingCredits, setRemainingCredits] = useState<number | null>(null)
+  const [generationId, setGenerationId] = useState<string | null>(null)
 
   async function generate(values: GenerationFormValues) {
     setOutput('')
     setError(null)
+    setGenerationId(null)
     setStatus('streaming')
 
     const {
@@ -82,6 +85,7 @@ export function useGeneration() {
         }
         if (payload.done) {
           setRemainingCredits(payload.remainingCredits ?? null)
+          setGenerationId(payload.generationId ?? null)
         }
       }
     }
@@ -89,5 +93,5 @@ export function useGeneration() {
     setStatus((current) => (current === 'error' ? current : 'done'))
   }
 
-  return { output, status, error, remainingCredits, generate }
+  return { output, status, error, remainingCredits, generationId, generate }
 }
