@@ -1,7 +1,8 @@
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
+import { ImageUpload } from '@/components/ImageUpload'
 import { useGeneration } from '@/hooks/useGeneration'
 import {
   docTypeOptions,
@@ -17,10 +18,12 @@ import {
 export function GenerationForm() {
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<GenerationFormValues>({
     resolver: zodResolver(generationFormSchema),
+    defaultValues: { inputImageUrls: [] },
   })
   const { output, status, error, remainingCredits, generate } = useGeneration()
 
@@ -42,6 +45,12 @@ export function GenerationForm() {
           placeholder="예: 여름 휴가지로 제주도를 추천하는 이유"
           error={errors.inputText?.message}
           {...register('inputText')}
+        />
+
+        <Controller
+          control={control}
+          name="inputImageUrls"
+          render={({ field }) => <ImageUpload value={field.value} onChange={field.onChange} />}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -85,16 +94,23 @@ export function GenerationForm() {
 
         <button
           type="submit"
-          disabled={status === 'streaming'}
+          disabled={status === 'analyzing_image' || status === 'streaming'}
           className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
         >
-          {status === 'streaming' ? '생성 중...' : '글 생성하기'}
+          {status === 'analyzing_image'
+            ? '사진 분석 중...'
+            : status === 'streaming'
+              ? '생성 중...'
+              : '글 생성하기'}
         </button>
       </form>
 
-      {(output || status === 'error') && (
+      {(output || status === 'error' || status === 'analyzing_image') && (
         <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
           {error && <p className="text-sm text-red-500">{error}</p>}
+          {status === 'analyzing_image' && (
+            <p className="text-sm text-gray-400">사진을 분석하고 있어요...</p>
+          )}
           {output && (
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">{output}</p>
           )}

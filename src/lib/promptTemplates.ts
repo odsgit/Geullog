@@ -43,7 +43,7 @@ const languageInstructions: Record<string, string> = {
   ja: '日本語で書いてください。',
 }
 
-export function buildPrompt(input: GenerationFormValues) {
+export function buildPrompt(input: GenerationFormValues, imageDescription?: string | null) {
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
     docTypeInstructions[input.docType],
@@ -56,5 +56,9 @@ export function buildPrompt(input: GenerationFormValues) {
     .filter(Boolean)
     .join(' ')
 
-  return { system, user: input.inputText }
+  const user = imageDescription
+    ? `${input.inputText}\n\n[첨부된 사진 설명]\n${imageDescription}\n\n위 사진 내용을 자연스럽게 반영해서 작성하세요.`
+    : input.inputText
+
+  return { system, user }
 }
