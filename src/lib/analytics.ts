@@ -43,3 +43,8 @@ export function initAnalytics() {
   const clarityId = import.meta.env.CLARITY_PROJECT_ID
   if (clarityId) loadClarity(clarityId)
 }
+
+export function trackEvent(eventName: string, params?: Record<string, unknown>) {
+  if (typeof window.gtag !== 'function') return
+  window.gtag('event', eventName, params)
+}

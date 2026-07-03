@@ -78,6 +78,7 @@ export type Database = {
           id: string
           input_image_urls: Json
           input_text: string | null
+          is_public: boolean
           language: string | null
           length: string | null
           output_text: string | null
@@ -93,6 +94,7 @@ export type Database = {
           id?: string
           input_image_urls?: Json
           input_text?: string | null
+          is_public?: boolean
           language?: string | null
           length?: string | null
           output_text?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           id?: string
           input_image_urls?: Json
           input_text?: string | null
+          is_public?: boolean
           language?: string | null
           length?: string | null
           output_text?: string | null
