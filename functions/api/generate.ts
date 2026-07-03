@@ -130,6 +130,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             encoder.encode(
               `data: ${JSON.stringify({
                 done: true,
+                generationId: result?.generation_id,
                 remainingCredits: result?.remaining_credits,
               })}\n\n`,
             ),

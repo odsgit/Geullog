@@ -263,6 +263,17 @@ export type Database = {
           remaining_credits: number
         }[]
       }
+      record_generation_version: {
+        Args: {
+          p_action?: string
+          p_generation_id: string
+          p_output_text: string
+        }
+        Returns: {
+          remaining_credits: number
+          version_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
