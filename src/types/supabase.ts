@@ -78,6 +78,7 @@ export type Database = {
           id: string
           input_image_urls: Json
           input_text: string | null
+          language: string | null
           length: string | null
           output_text: string | null
           style: string | null
@@ -92,6 +93,7 @@ export type Database = {
           id?: string
           input_image_urls?: Json
           input_text?: string | null
+          language?: string | null
           length?: string | null
           output_text?: string | null
           style?: string | null
@@ -106,6 +108,7 @@ export type Database = {
           id?: string
           input_image_urls?: Json
           input_text?: string | null
+          language?: string | null
           length?: string | null
           output_text?: string | null
           style?: string | null
@@ -242,7 +245,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_generation: {
+        Args: {
+          p_doc_type: string
+          p_input_image_urls: Json
+          p_input_text: string
+          p_language: string
+          p_length: string
+          p_output_text: string
+          p_style: string
+          p_target_audience: string
+          p_tokens_used: number
+          p_tone: string
+        }
+        Returns: {
+          generation_id: string
+          remaining_credits: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
