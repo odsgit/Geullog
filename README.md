@@ -52,7 +52,25 @@ functions/      Cloudflare Pages Functions (서버리스 API 라우트)
    npm run format        # Prettier 포맷팅
    npm run format:check  # Prettier 검사만 수행
    npm run pages:dev     # Cloudflare Pages Functions 포함 로컬 미리보기
+   npm run gen:types     # Supabase 스키마로부터 src/types/supabase.ts 재생성
    ```
+
+## Supabase
+
+`supabase/migrations/`에 SQL 마이그레이션을 관리합니다. 테이블: `profiles`, `generations`,
+`generation_versions`, `templates`, `usage_logs`. 모든 테이블은 RLS가 활성화되어 있고 본인 소유
+데이터만 접근 가능합니다 (`usage_logs`는 조회/생성만 가능한 append-only 로그).
+
+```bash
+supabase login                                    # 최초 1회
+supabase link --project-ref xdbmuarvrnuwksgczsbf  # 최초 1회, Geullog 프로젝트 연결
+supabase migration new <설명>                      # 새 마이그레이션 파일 생성
+supabase db push                                  # 마이그레이션을 원격 DB에 적용
+npm run gen:types                                 # 적용된 스키마 기준으로 타입 재생성
+```
+
+스키마를 변경했다면 `supabase db push` 이후 `npm run gen:types`를 실행해 `src/lib/supabase.ts`가
+사용하는 타입을 최신 상태로 유지하세요.
 
 ## Cloudflare Pages 배포
 

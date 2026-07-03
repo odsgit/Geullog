@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/supabase'
 
 const supabaseUrl = import.meta.env.SUPABASE_URL
 const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY
@@ -7,4 +8,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
