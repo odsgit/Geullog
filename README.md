@@ -87,3 +87,5 @@ GitHub 저장소를 Cloudflare Pages 대시보드에 직접 연동하는 방식(
 ```bash
 npm run pages:dev
 ```
+
+<!-- Cloudflare Pages preview deployment verification -->
