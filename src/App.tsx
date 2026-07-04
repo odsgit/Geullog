@@ -6,6 +6,7 @@ import { HomePage } from '@/pages/HomePage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage'
 import { SharePage } from '@/pages/SharePage'
+import { TrialPage } from '@/pages/TrialPage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/share/:id" element={<SharePage />} />
+          <Route path="/trial" element={<TrialPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
