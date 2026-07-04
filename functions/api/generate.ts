@@ -207,6 +207,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           p_narrative_type_id: input.narrativeTypeId || null,
           p_series_id: seriesId,
           p_part_number: partNumber,
+          p_detailed_genre: input.detailedGenre || null,
         })
 
         if (recordError) {

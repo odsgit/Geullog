@@ -86,6 +86,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             inputImageUrls: Array.isArray(generation.input_image_urls)
               ? (generation.input_image_urls as string[])
               : [],
+            detailedGenre: generation.detailed_genre ?? undefined,
           }
 
           let imageDescription: string | null = null

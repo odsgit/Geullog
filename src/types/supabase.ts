@@ -134,6 +134,7 @@ export type Database = {
         Row: {
           author_style_id: string | null
           created_at: string
+          detailed_genre: string | null
           doc_type: string
           id: string
           input_image_urls: Json
@@ -154,6 +155,7 @@ export type Database = {
         Insert: {
           author_style_id?: string | null
           created_at?: string
+          detailed_genre?: string | null
           doc_type: string
           id?: string
           input_image_urls?: Json
@@ -174,6 +176,7 @@ export type Database = {
         Update: {
           author_style_id?: string | null
           created_at?: string
+          detailed_genre?: string | null
           doc_type?: string
           id?: string
           input_image_urls?: Json
@@ -407,6 +410,7 @@ export type Database = {
       record_generation: {
         Args: {
           p_author_style_id?: string
+          p_detailed_genre?: string
           p_doc_type: string
           p_input_image_urls: Json
           p_input_text: string

@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
 import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
+import { parseExampleGenres } from '@/lib/narrativeGenres'
 import {
   docTypeOptions,
   styleOptions,
@@ -31,6 +32,8 @@ interface AuthorStyleOption {
 interface NarrativeTypeOption {
   id: string
   name: string
+  definition: string
+  example_genres: string | null
 }
 
 export function GenerationForm() {
@@ -41,6 +44,7 @@ export function GenerationForm() {
     handleSubmit,
     getValues,
     setValue,
+    watch,
     reset,
     formState: { errors },
   } = useForm<GenerationFormValues>({
@@ -68,10 +72,16 @@ export function GenerationForm() {
   useEffect(() => {
     supabase
       .from('narrative_types')
-      .select('id, name')
+      .select('id, name, definition, example_genres')
       .order('name')
       .then(({ data }) => setNarrativeTypes(data ?? []))
   }, [])
+
+  const selectedNarrativeTypeId = watch('narrativeTypeId')
+  const selectedNarrativeType = narrativeTypes.find((type) => type.id === selectedNarrativeTypeId)
+  const genreOptions = selectedNarrativeType
+    ? parseExampleGenres(selectedNarrativeType.example_genres ?? '')
+    : []
 
   useEffect(() => {
     const templateId = localStorage.getItem(TEMPLATE_STORAGE_KEY)
@@ -95,6 +105,7 @@ export function GenerationForm() {
             length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
             language: 'ko',
             inputImageUrls: [],
+            detailedGenre: undefined,
           })
           setUseCustomLanguage(false)
         }
@@ -109,7 +120,7 @@ export function GenerationForm() {
     supabase
       .from('generations')
       .select(
-        'doc_type, style, tone, target_audience, length, language, author_style_id, narrative_type_id',
+        'doc_type, style, tone, target_audience, length, language, author_style_id, narrative_type_id, detailed_genre',
       )
       .eq('id', continueId)
       .single()
@@ -128,6 +139,7 @@ export function GenerationForm() {
             inputImageUrls: [],
             authorStyleId: data.author_style_id ?? undefined,
             narrativeTypeId: data.narrative_type_id ?? undefined,
+            detailedGenre: data.detailed_genre ?? undefined,
             continueFromGenerationId: continueId,
           })
           setUseCustomLanguage(language !== 'ko' && language !== 'en')
@@ -157,6 +169,7 @@ export function GenerationForm() {
       inputImageUrls: [],
       authorStyleId: undefined,
       narrativeTypeId: undefined,
+      detailedGenre: undefined,
       continueFromGenerationId: undefined,
     })
   }
@@ -250,8 +263,27 @@ export function GenerationForm() {
           placeholder="선택 안 함"
           options={narrativeTypes.map((type) => ({ value: type.id, label: type.name }))}
           error={errors.narrativeTypeId?.message}
-          {...register('narrativeTypeId')}
+          {...register('narrativeTypeId', { onChange: () => setValue('detailedGenre', '') })}
         />
+
+        {selectedNarrativeType && (
+          <div className="flex flex-col gap-4 rounded-xl border border-line bg-paper px-4 py-3">
+            <p className="text-sm text-ink/70">{selectedNarrativeType.definition}</p>
+
+            {genreOptions.length > 0 && (
+              <Select
+                label="세부 장르 (선택)"
+                placeholder="선택 안 함"
+                options={genreOptions.map((genre) => ({
+                  value: genre.name,
+                  label: genre.detail ? `${genre.name} (${genre.detail})` : genre.name,
+                }))}
+                error={errors.detailedGenre?.message}
+                {...register('detailedGenre')}
+              />
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Select
