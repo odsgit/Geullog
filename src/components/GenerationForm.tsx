@@ -23,6 +23,7 @@ import {
 interface AuthorStyleOption {
   id: string
   name: string
+  nationality: string | null
   representative_works: string | null
 }
 
@@ -49,7 +50,7 @@ export function GenerationForm() {
   useEffect(() => {
     supabase
       .from('author_styles')
-      .select('id, name, representative_works')
+      .select('id, name, nationality, representative_works')
       .order('name')
       .then(({ data }) => setAuthorStyles(data ?? []))
   }, [])
@@ -131,12 +132,15 @@ export function GenerationForm() {
         <Select
           label="작가 스타일 (선택)"
           placeholder="선택 안 함"
-          options={authorStyles.map((style) => ({
-            value: style.id,
-            label: style.representative_works
-              ? `${style.name} (${style.representative_works})`
-              : style.name,
-          }))}
+          options={authorStyles.map((style) => {
+            const detail = [style.nationality, style.representative_works]
+              .filter(Boolean)
+              .join(' · ')
+            return {
+              value: style.id,
+              label: detail ? `${style.name} (${detail})` : style.name,
+            }
+          })}
           error={errors.authorStyleId?.message}
           {...register('authorStyleId')}
         />
