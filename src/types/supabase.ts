@@ -135,21 +135,35 @@ export type Database = {
           created_at: string
           credits: number
           id: string
+          referral_code: string
+          referred_by: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           credits?: number
           id: string
+          referral_code: string
+          referred_by?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           credits?: number
           id?: string
+          referral_code?: string
+          referred_by?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       templates: {
         Row: {
@@ -248,6 +262,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_referral: { Args: { p_referral_code: string }; Returns: Json }
       record_generation: {
         Args: {
           p_doc_type: string

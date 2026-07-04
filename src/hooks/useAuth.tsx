@@ -10,11 +10,19 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+const REFERRAL_STORAGE_KEY = 'geullog_referral_code'
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Captured before ProtectedRoute can redirect away and drop the query string.
+    const ref = new URLSearchParams(window.location.search).get('ref')
+    if (ref && !localStorage.getItem(REFERRAL_STORAGE_KEY)) {
+      localStorage.setItem(REFERRAL_STORAGE_KEY, ref)
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
@@ -28,6 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (!session) return
+    const referralCode = localStorage.getItem(REFERRAL_STORAGE_KEY)
+    if (!referralCode) return
+
+    Promise.resolve(supabase.rpc('apply_referral', { p_referral_code: referralCode })).finally(
+      () => {
+        localStorage.removeItem(REFERRAL_STORAGE_KEY)
+      },
+    )
+  }, [session])
 
   return (
     <AuthContext.Provider value={{ user: session?.user ?? null, session, loading }}>
