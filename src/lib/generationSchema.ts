@@ -37,10 +37,11 @@ export const lengthOptions = [
   { value: 'long', label: '길게 (~1000자)' },
 ] as const
 
+// Quick-pick defaults. Any other language is typed in freely (see the
+// "직접 입력" toggle in GenerationForm) rather than listed here.
 export const languageOptions = [
   { value: 'ko', label: '한국어' },
   { value: 'en', label: 'English' },
-  { value: 'ja', label: '日本語' },
 ] as const
 
 function valuesOf<T extends { value: string }>(options: readonly T[]) {
@@ -56,7 +57,7 @@ export const generationFormSchema = z.object({
     message: '타겟 독자를 선택해주세요',
   }),
   length: z.enum(valuesOf(lengthOptions), { message: '분량을 선택해주세요' }),
-  language: z.enum(valuesOf(languageOptions), { message: '언어를 선택해주세요' }),
+  language: z.string().trim().min(1, '언어를 선택해주세요'),
   inputImageUrls: z.array(z.string()),
   authorStyleId: z.string().optional(),
   narrativeTypeId: z.string().optional(),
