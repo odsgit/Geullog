@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Input } from '@/components/Input'
@@ -118,6 +118,13 @@ export function LoginPage() {
         >
           {mode === 'signIn' ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
         </button>
+
+        <Link
+          to="/trial"
+          className="mt-2 block w-full text-center text-sm text-gray-400 hover:text-gray-600"
+        >
+          가입 없이 먼저 체험해보기
+        </Link>
       </div>
     </div>
   )

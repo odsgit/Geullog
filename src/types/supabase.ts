@@ -212,6 +212,24 @@ export type Database = {
           },
         ]
       }
+      trial_usage: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       usage_logs: {
         Row: {
           action: string
@@ -263,6 +281,7 @@ export type Database = {
     }
     Functions: {
       apply_referral: { Args: { p_referral_code: string }; Returns: Json }
+      claim_trial: { Args: { p_ip_hash: string }; Returns: Json }
       record_generation: {
         Args: {
           p_doc_type: string
