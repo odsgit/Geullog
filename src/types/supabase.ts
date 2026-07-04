@@ -39,6 +39,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      author_styles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          representative_works: string | null
+          style_description: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          representative_works?: string | null
+          style_description: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          representative_works?: string | null
+          style_description?: string
+        }
+        Relationships: []
+      }
       generation_versions: {
         Row: {
           created_at: string
@@ -73,6 +97,7 @@ export type Database = {
       }
       generations: {
         Row: {
+          author_style_id: string | null
           created_at: string
           doc_type: string
           id: string
@@ -89,6 +114,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          author_style_id?: string | null
           created_at?: string
           doc_type: string
           id?: string
@@ -105,6 +131,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          author_style_id?: string | null
           created_at?: string
           doc_type?: string
           id?: string
@@ -121,6 +148,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "generations_author_style_id_fkey"
+            columns: ["author_style_id"]
+            isOneToOne: false
+            referencedRelation: "author_styles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "generations_user_id_fkey"
             columns: ["user_id"]
@@ -287,6 +321,7 @@ export type Database = {
       claim_trial: { Args: { p_ip_hash: string }; Returns: Json }
       record_generation: {
         Args: {
+          p_author_style_id?: string
           p_doc_type: string
           p_input_image_urls: Json
           p_input_text: string

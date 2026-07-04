@@ -58,6 +58,7 @@ export const generationFormSchema = z.object({
   length: z.enum(valuesOf(lengthOptions), { message: '분량을 선택해주세요' }),
   language: z.enum(valuesOf(languageOptions), { message: '언어를 선택해주세요' }),
   inputImageUrls: z.array(z.string()),
+  authorStyleId: z.string().optional(),
 })
 
 export type GenerationFormValues = z.infer<typeof generationFormSchema>

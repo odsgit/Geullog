@@ -111,7 +111,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             imageDescription = visionResponse.choices[0]?.message?.content ?? null
           }
 
-          const built = buildPrompt(formValues, imageDescription)
+          let authorStyleDescription: string | null = null
+          if (generation.author_style_id) {
+            const { data: authorStyle } = await supabase
+              .from('author_styles')
+              .select('style_description')
+              .eq('id', generation.author_style_id)
+              .single()
+            authorStyleDescription = authorStyle?.style_description ?? null
+          }
+
+          const built = buildPrompt(formValues, imageDescription, authorStyleDescription)
           system = built.system
           userPrompt = built.user
         } else {
