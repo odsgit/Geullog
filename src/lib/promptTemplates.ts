@@ -43,9 +43,13 @@ const languageInstructions: Record<string, string> = {
   ja: '日本語で書いてください。',
 }
 
+export const NO_MARKDOWN_INSTRUCTION =
+  '#, *, - 같은 마크다운 문법은 사용하지 말고 일반 텍스트로만 작성하세요.'
+
 export function buildPrompt(input: GenerationFormValues, imageDescription?: string | null) {
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
+    NO_MARKDOWN_INSTRUCTION,
     docTypeInstructions[input.docType],
     styleInstructions[input.style],
     toneInstructions[input.tone],

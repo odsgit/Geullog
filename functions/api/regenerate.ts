@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { regenerateRequestSchema, type GenerationFormValues } from '../../src/lib/generationSchema'
-import { buildPrompt } from '../../src/lib/promptTemplates'
+import { buildPrompt, NO_MARKDOWN_INSTRUCTION } from '../../src/lib/promptTemplates'
 
 interface Env {
   OPENAI_API_KEY: string
@@ -116,7 +116,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           userPrompt = built.user
         } else {
           const baseText = input.currentText ?? generation.output_text ?? ''
-          system = '당신은 전문 카피라이터이자 콘텐츠 작가입니다.'
+          system = `당신은 전문 카피라이터이자 콘텐츠 작가입니다. ${NO_MARKDOWN_INSTRUCTION}`
           userPrompt = `${toneAdjustmentInstructions[input.mode]}\n\n${baseText}`
         }
 
