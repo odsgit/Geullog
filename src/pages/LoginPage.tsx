@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Input } from '@/components/Input'
 import { DemoHero } from '@/components/DemoHero'
+import { FeatureHighlights } from '@/components/FeatureHighlights'
 
 type Mode = 'signIn' | 'signUp'
 
@@ -141,6 +142,8 @@ export function LoginPage() {
           </Link>
         </div>
       </div>
+
+      <FeatureHighlights />
     </div>
   )
 }
