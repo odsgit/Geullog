@@ -9,6 +9,8 @@ import { SharePage } from '@/pages/SharePage'
 import { TrialPage } from '@/pages/TrialPage'
 import { TemplateGalleryPage } from '@/pages/TemplateGalleryPage'
 import { TemplateDetailPage } from '@/pages/TemplateDetailPage'
+import { BlogIndexPage } from '@/pages/BlogIndexPage'
+import { BlogPostPage } from '@/pages/BlogPostPage'
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
           <Route path="/trial" element={<TrialPage />} />
           <Route path="/templates" element={<TemplateGalleryPage />} />
           <Route path="/templates/:id" element={<TemplateDetailPage />} />
+          <Route path="/blog" element={<BlogIndexPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
