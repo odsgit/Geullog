@@ -15,6 +15,17 @@ export async function exportAsDocx(filename: string, json: JSONContent) {
   downloadBlob(blob, `${filename}.docx`)
 }
 
+// For content that only exists as plain text (e.g. series parts, which are
+// never opened in the RichTextEditor), rather than Tiptap JSON.
+export async function exportPlainTextAsDocx(filename: string, text: string) {
+  const paragraphs = text.split('\n').map((line) => new Paragraph({ children: [new TextRun(line)] }))
+  const doc = new Document({
+    sections: [{ children: paragraphs.length > 0 ? paragraphs : [new Paragraph({})] }],
+  })
+  const blob = await Packer.toBlob(doc)
+  downloadBlob(blob, `${filename}.docx`)
+}
+
 function nodeToParagraph(node: JSONContent): Paragraph {
   if (node.type === 'heading') {
     const level = node.attrs?.level ?? 1

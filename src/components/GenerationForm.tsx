@@ -9,6 +9,7 @@ import { useGeneration } from '@/hooks/useGeneration'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
+import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
 import {
   docTypeOptions,
   styleOptions,
@@ -39,6 +40,7 @@ export function GenerationForm() {
     control,
     handleSubmit,
     getValues,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<GenerationFormValues>({
@@ -52,6 +54,7 @@ export function GenerationForm() {
   const [templateSaved, setTemplateSaved] = useState(false)
   const [authorStyles, setAuthorStyles] = useState<AuthorStyleOption[]>([])
   const [narrativeTypes, setNarrativeTypes] = useState<NarrativeTypeOption[]>([])
+  const [continuingFromId, setContinuingFromId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -97,6 +100,62 @@ export function GenerationForm() {
       })
   }, [reset])
 
+  useEffect(() => {
+    const continueId = localStorage.getItem(CONTINUE_STORAGE_KEY)
+    if (!continueId) return
+
+    supabase
+      .from('generations')
+      .select(
+        'doc_type, style, tone, target_audience, length, language, author_style_id, narrative_type_id',
+      )
+      .eq('id', continueId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          reset({
+            inputText: '',
+            docType: (data.doc_type ?? docTypeOptions[0].value) as GenerationFormValues['docType'],
+            style: (data.style ?? styleOptions[0].value) as GenerationFormValues['style'],
+            tone: (data.tone ?? toneOptions[0].value) as GenerationFormValues['tone'],
+            targetAudience: (data.target_audience ??
+              targetAudienceOptions[0].value) as GenerationFormValues['targetAudience'],
+            length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
+            language: (data.language ?? 'ko') as GenerationFormValues['language'],
+            inputImageUrls: [],
+            authorStyleId: data.author_style_id ?? undefined,
+            narrativeTypeId: data.narrative_type_id ?? undefined,
+            continueFromGenerationId: continueId,
+          })
+          setContinuingFromId(continueId)
+        }
+        localStorage.removeItem(CONTINUE_STORAGE_KEY)
+      })
+  }, [reset])
+
+  useEffect(() => {
+    // After a continuation succeeds, point subsequent submits at the part
+    // that was just created — otherwise resubmitting without navigating
+    // back through GenerationResult's "이어서 쓰기" button would keep
+    // continuing from the original source instead of the latest part.
+    if (status === 'done' && generationId && continuingFromId) {
+      setContinuingFromId(generationId)
+      setValue('continueFromGenerationId', generationId)
+      setValue('inputText', '')
+    }
+  }, [status, generationId, continuingFromId, setValue])
+
+  function handleCancelContinuation() {
+    setContinuingFromId(null)
+    reset({
+      inputText: '',
+      inputImageUrls: [],
+      authorStyleId: undefined,
+      narrativeTypeId: undefined,
+      continueFromGenerationId: undefined,
+    })
+  }
+
   async function handleSaveTemplate() {
     if (!user || !templateTitle.trim()) return
 
@@ -130,9 +189,26 @@ export function GenerationForm() {
           </p>
         </div>
 
+        {continuingFromId && (
+          <div className="flex items-center justify-between rounded-xl border border-line bg-paper px-4 py-2.5 text-sm text-ink/70">
+            <span>이전 글에 이어서 쓰는 중이에요</span>
+            <button
+              type="button"
+              onClick={handleCancelContinuation}
+              className="text-ink/50 hover:text-ink"
+            >
+              취소
+            </button>
+          </div>
+        )}
+
         <TextArea
-          label="주제 / 키워드"
-          placeholder="예: 여름 휴가지로 제주도를 추천하는 이유"
+          label={continuingFromId ? '다음 내용 지시' : '주제 / 키워드'}
+          placeholder={
+            continuingFromId
+              ? '예: 이제 주인공이 마을을 떠나는 장면을 이어서 써주세요'
+              : '예: 여름 휴가지로 제주도를 추천하는 이유'
+          }
           error={errors.inputText?.message}
           {...register('inputText')}
         />
@@ -215,7 +291,9 @@ export function GenerationForm() {
             ? '사진 분석 중...'
             : status === 'streaming'
               ? '생성 중...'
-              : '글 생성하기'}
+              : continuingFromId
+                ? '이어서 쓰기'
+                : '글 생성하기'}
         </button>
 
         {showTemplateTitleInput ? (

@@ -60,6 +60,7 @@ export const generationFormSchema = z.object({
   inputImageUrls: z.array(z.string()),
   authorStyleId: z.string().optional(),
   narrativeTypeId: z.string().optional(),
+  continueFromGenerationId: z.string().optional(),
 })
 
 export type GenerationFormValues = z.infer<typeof generationFormSchema>

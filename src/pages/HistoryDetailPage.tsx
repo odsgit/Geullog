@@ -8,6 +8,9 @@ export function HistoryDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [initialText, setInitialText] = useState<string | null>(null)
   const [initialIsPublic, setInitialIsPublic] = useState(false)
+  const [seriesInfo, setSeriesInfo] = useState<{ id: string; partNumber: number | null } | null>(
+    null,
+  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -31,6 +34,9 @@ export function HistoryDetailPage() {
 
       setInitialText(versions?.[0]?.output_text ?? generation.output_text ?? '')
       setInitialIsPublic(generation.is_public)
+      if (generation.series_id) {
+        setSeriesInfo({ id: generation.series_id, partNumber: generation.part_number })
+      }
     }
 
     load()
@@ -44,6 +50,15 @@ export function HistoryDetailPage() {
         <Link to="/history" className="text-sm text-ink/60 hover:text-ink">
           ← 히스토리로 돌아가기
         </Link>
+
+        {seriesInfo && (
+          <Link
+            to={`/series/${seriesInfo.id}`}
+            className="w-fit text-sm text-ink/60 hover:text-ink"
+          >
+            시리즈 {seriesInfo.partNumber ?? '?'}화 · 전체 시리즈 보기 →
+          </Link>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

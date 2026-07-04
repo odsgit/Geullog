@@ -51,6 +51,7 @@ export function buildPrompt(
   imageDescription?: string | null,
   authorStyleDescription?: string | null,
   narrativeTypeDescription?: string | null,
+  continuationContext?: string | null,
 ) {
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
@@ -63,13 +64,24 @@ export function buildPrompt(
     languageInstructions[input.language],
     authorStyleDescription ? `다음 문체를 참고해서 작성하세요: ${authorStyleDescription}` : null,
     narrativeTypeDescription ? `다음 서술 방식으로 작성하세요: ${narrativeTypeDescription}` : null,
+    continuationContext
+      ? '이것은 여러 부분으로 이어지는 긴 글의 다음 부분입니다. 이전 내용의 문체, 등장인물, 설정과의 일관성을 유지하며 자연스럽게 이어서 작성하세요.'
+      : null,
   ]
     .filter(Boolean)
     .join(' ')
 
-  const user = imageDescription
-    ? `${input.inputText}\n\n[첨부된 사진 설명]\n${imageDescription}\n\n위 사진 내용을 자연스럽게 반영해서 작성하세요.`
-    : input.inputText
+  const user = [
+    continuationContext ? `[이전 내용]\n${continuationContext}` : null,
+    imageDescription ? `[첨부된 사진 설명]\n${imageDescription}` : null,
+    continuationContext
+      ? `[다음 부분에 대한 지시]\n${input.inputText}\n\n위 이전 내용에 자연스럽게 이어서 다음 부분을 작성하세요.`
+      : imageDescription
+        ? `${input.inputText}\n\n위 사진 내용을 자연스럽게 반영해서 작성하세요.`
+        : input.inputText,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 
   return { system, user }
 }

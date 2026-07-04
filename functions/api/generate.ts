@@ -48,6 +48,63 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return Response.json({ error: 'insufficient_credits' }, { status: 402 })
   }
 
+  let continuationContext: string | null = null
+  let seriesId: string | null = null
+  let partNumber: number | null = null
+
+  if (input.continueFromGenerationId) {
+    const { data: sourceGeneration } = await supabase
+      .from('generations')
+      .select('id, series_id, input_text, output_text')
+      .eq('id', input.continueFromGenerationId)
+      .single()
+
+    if (!sourceGeneration) {
+      return Response.json({ error: 'continuation_source_not_found' }, { status: 404 })
+    }
+
+    const { data: latestVersion } = await supabase
+      .from('generation_versions')
+      .select('output_text')
+      .eq('generation_id', sourceGeneration.id)
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const previousText = latestVersion?.output_text ?? sourceGeneration.output_text ?? ''
+    continuationContext = previousText.length > 4000 ? previousText.slice(-4000) : previousText
+
+    seriesId = sourceGeneration.series_id
+    if (!seriesId) {
+      const { data: newSeries } = await supabase
+        .from('generation_series')
+        .insert({
+          user_id: user.id,
+          title: sourceGeneration.input_text?.slice(0, 60) || '제목 없는 시리즈',
+        })
+        .select('id')
+        .single()
+      seriesId = newSeries?.id ?? null
+      if (seriesId) {
+        await supabase
+          .from('generations')
+          .update({ series_id: seriesId, part_number: 1 })
+          .eq('id', sourceGeneration.id)
+      }
+    }
+
+    if (seriesId) {
+      const { data: maxPartRow } = await supabase
+        .from('generations')
+        .select('part_number')
+        .eq('series_id', seriesId)
+        .order('part_number', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      partNumber = (maxPartRow?.part_number ?? 1) + 1
+    }
+  }
+
   const openai = new OpenAI({ apiKey: context.env.OPENAI_API_KEY })
 
   const encoder = new TextEncoder()
@@ -111,6 +168,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           imageDescription,
           authorStyleDescription,
           narrativeTypeDescription,
+          continuationContext,
         )
 
         const stream = await openai.chat.completions.create({
@@ -147,6 +205,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           p_tokens_used: tokensUsed,
           p_author_style_id: input.authorStyleId || null,
           p_narrative_type_id: input.narrativeTypeId || null,
+          p_series_id: seriesId,
+          p_part_number: partNumber,
         })
 
         if (recordError) {

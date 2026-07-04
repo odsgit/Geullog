@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { RichTextEditor, type RichTextEditorHandle } from '@/components/RichTextEditor'
 import { exportAsTxt, exportAsDocx } from '@/lib/export'
 import { trackEvent } from '@/lib/analytics'
+import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
 
 type ActionMode = 'regenerate' | 'more_casual' | 'more_formal'
 
@@ -138,6 +139,14 @@ export function GenerationResult({
     if (!updateError) setIsPublic(false)
   }
 
+  function handleContinue() {
+    localStorage.setItem(CONTINUE_STORAGE_KEY, generationId)
+    // Hard navigation: this result can already be rendered on "/" itself
+    // (right after generating), and react-router's navigate('/') is a no-op
+    // there, so GenerationForm would never remount to pick up localStorage.
+    window.location.href = '/'
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <RichTextEditor ref={editorRef} content={initialText} />
@@ -156,6 +165,10 @@ export function GenerationResult({
             {busy === mode ? '처리 중...' : actionLabels[mode]}
           </button>
         ))}
+        <div className="mx-1 h-full w-px self-stretch bg-line" />
+        <button type="button" onClick={handleContinue} className="btn-sm">
+          이어서 쓰기
+        </button>
         <div className="mx-1 h-full w-px self-stretch bg-line" />
         <button type="button" onClick={handleExportTxt} className="btn-sm">
           .txt 내보내기
