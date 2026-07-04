@@ -36,6 +36,47 @@ interface NarrativeTypeOption {
   example_genres: string | null
 }
 
+interface SeriesPart {
+  id: string
+  part_number: number | null
+  output_text: string
+}
+
+async function loadSeriesParts(seedGenerationId: string): Promise<SeriesPart[]> {
+  const { data: seed } = await supabase
+    .from('generations')
+    .select('id, series_id, part_number, output_text')
+    .eq('id', seedGenerationId)
+    .single()
+
+  if (!seed) return []
+
+  let rows: SeriesPart[]
+  if (seed.series_id) {
+    const { data } = await supabase
+      .from('generations')
+      .select('id, part_number, output_text')
+      .eq('series_id', seed.series_id)
+      .order('part_number', { ascending: true })
+    rows = (data ?? []).map((row) => ({ ...row, output_text: row.output_text ?? '' }))
+  } else {
+    rows = [{ id: seed.id, part_number: seed.part_number ?? 1, output_text: seed.output_text ?? '' }]
+  }
+
+  return Promise.all(
+    rows.map(async (part) => {
+      const { data: versions } = await supabase
+        .from('generation_versions')
+        .select('output_text')
+        .eq('generation_id', part.id)
+        .order('version_number', { ascending: false })
+        .limit(1)
+
+      return { ...part, output_text: versions?.[0]?.output_text ?? part.output_text ?? '' }
+    }),
+  )
+}
+
 export function GenerationForm() {
   const { user } = useAuth()
   const {
@@ -60,6 +101,8 @@ export function GenerationForm() {
   const [authorStyles, setAuthorStyles] = useState<AuthorStyleOption[]>([])
   const [narrativeTypes, setNarrativeTypes] = useState<NarrativeTypeOption[]>([])
   const [continuingFromId, setContinuingFromId] = useState<string | null>(null)
+  const [seriesParts, setSeriesParts] = useState<SeriesPart[]>([])
+  const [expandedPartId, setExpandedPartId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -144,6 +187,7 @@ export function GenerationForm() {
           })
           setUseCustomLanguage(language !== 'ko' && language !== 'en')
           setContinuingFromId(continueId)
+          loadSeriesParts(continueId).then(setSeriesParts)
         }
         localStorage.removeItem(CONTINUE_STORAGE_KEY)
       })
@@ -158,11 +202,14 @@ export function GenerationForm() {
       setContinuingFromId(generationId)
       setValue('continueFromGenerationId', generationId)
       setValue('inputText', '')
+      loadSeriesParts(generationId).then(setSeriesParts)
     }
   }, [status, generationId, continuingFromId, setValue])
 
   function handleCancelContinuation() {
     setContinuingFromId(null)
+    setSeriesParts([])
+    setExpandedPartId(null)
     setUseCustomLanguage(false)
     reset({
       inputText: '',
@@ -213,15 +260,43 @@ export function GenerationForm() {
         </div>
 
         {continuingFromId && (
-          <div className="flex items-center justify-between rounded-xl border border-line bg-paper px-4 py-2.5 text-sm text-ink/70">
-            <span>이전 글에 이어서 쓰는 중이에요</span>
-            <button
-              type="button"
-              onClick={handleCancelContinuation}
-              className="text-ink/50 hover:text-ink"
-            >
-              취소
-            </button>
+          <div className="flex flex-col gap-2 rounded-xl border border-line bg-paper px-4 py-2.5 text-sm text-ink/70">
+            <div className="flex items-center justify-between">
+              <span>이전 글에 이어서 쓰는 중이에요</span>
+              <button
+                type="button"
+                onClick={handleCancelContinuation}
+                className="text-ink/50 hover:text-ink"
+              >
+                취소
+              </button>
+            </div>
+
+            {seriesParts.length > 0 && (
+              <div className="flex flex-col gap-1 border-t border-line pt-2">
+                {seriesParts.map((part) => (
+                  <div key={part.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedPartId((current) => (current === part.id ? null : part.id))
+                      }
+                      className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-left text-ink/80 hover:bg-white hover:text-ink"
+                    >
+                      <span className="font-medium">{part.part_number ?? '?'}화</span>
+                      <span className="text-xs text-ink/40">
+                        {expandedPartId === part.id ? '접기' : '내용 보기'}
+                      </span>
+                    </button>
+                    {expandedPartId === part.id && (
+                      <p className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg bg-white px-3 py-2 text-xs text-ink/70">
+                        {part.output_text}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
