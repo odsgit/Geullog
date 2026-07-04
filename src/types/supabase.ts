@@ -41,23 +41,29 @@ export type Database = {
     Tables: {
       author_styles: {
         Row: {
+          active_years: string | null
           created_at: string
           id: string
           name: string
+          nationality: string | null
           representative_works: string | null
           style_description: string
         }
         Insert: {
+          active_years?: string | null
           created_at?: string
           id?: string
           name: string
+          nationality?: string | null
           representative_works?: string | null
           style_description: string
         }
         Update: {
+          active_years?: string | null
           created_at?: string
           id?: string
           name?: string
+          nationality?: string | null
           representative_works?: string | null
           style_description?: string
         }
