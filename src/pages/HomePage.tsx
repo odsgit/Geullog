@@ -3,7 +3,7 @@ import { GenerationForm } from '@/components/GenerationForm'
 
 export function HomePage() {
   return (
-    <div className="min-h-svh bg-gray-50">
+    <div className="min-h-svh bg-paper">
       <AppHeader />
 
       <main className="px-6 py-12">

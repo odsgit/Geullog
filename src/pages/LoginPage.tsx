@@ -51,11 +51,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+    <div className="flex min-h-svh items-center justify-center bg-paper px-4">
+      <div className="brutal-card w-full max-w-sm p-8">
         <div className="mb-6 text-center">
-          <h1 className="text-xl font-semibold text-gray-900">Geullog</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-black">Geullog</h1>
+          <p className="mt-1 text-sm font-medium text-black/60">
             {mode === 'signIn' ? '로그인하고 글쓰기를 시작해보세요' : '몇 초면 가입이 끝나요'}
           </p>
         </div>
@@ -82,58 +82,50 @@ export function LoginPage() {
           />
 
           {error && (
-            <p role="alert" className="text-sm text-red-500">
+            <p role="alert" className="text-sm font-bold text-red-500">
               {error}
             </p>
           )}
-          {message && <p className="text-sm text-gray-600">{message}</p>}
+          {message && <p className="text-sm font-bold text-black/70">{message}</p>}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={submitting} className="brutal-btn-primary w-full">
             {mode === 'signIn' ? '로그인' : '회원가입'}
           </button>
         </form>
 
         <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-100" />
-          <span className="text-xs text-gray-400">또는</span>
-          <div className="h-px flex-1 bg-gray-100" />
+          <div className="h-[3px] flex-1 bg-black" />
+          <span className="text-xs font-bold text-black/50">또는</span>
+          <div className="h-[3px] flex-1 bg-black" />
         </div>
 
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
+        <button type="button" onClick={handleGoogleSignIn} className="brutal-btn w-full">
           Google로 계속하기
         </button>
 
         <button
           type="button"
           onClick={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')}
-          className="mt-5 w-full text-center text-sm text-gray-500 hover:text-gray-700"
+          className="mt-5 w-full text-center text-sm font-bold text-black/60 hover:text-black"
         >
           {mode === 'signIn' ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
         </button>
 
         <Link
           to="/trial"
-          className="mt-2 block w-full text-center text-sm text-gray-400 hover:text-gray-600"
+          className="mt-2 block w-full text-center text-sm font-bold text-black/40 hover:text-black"
         >
           가입 없이 먼저 체험해보기
         </Link>
         <Link
           to="/templates"
-          className="mt-2 block w-full text-center text-sm text-gray-400 hover:text-gray-600"
+          className="mt-2 block w-full text-center text-sm font-bold text-black/40 hover:text-black"
         >
           템플릿 갤러리 둘러보기
         </Link>
         <Link
           to="/blog"
-          className="mt-2 block w-full text-center text-sm text-gray-400 hover:text-gray-600"
+          className="mt-2 block w-full text-center text-sm font-bold text-black/40 hover:text-black"
         >
           블로그 둘러보기
         </Link>

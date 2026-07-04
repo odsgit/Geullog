@@ -38,39 +38,32 @@ export function SharePage() {
   const docTypeLabel = docTypeOptions.find((option) => option.value === docType)?.label
 
   return (
-    <div className="min-h-svh bg-gray-50">
-      <header className="border-b border-gray-100 bg-white px-6 py-4">
-        <Link to="/" className="text-sm font-semibold text-gray-900">
+    <div className="min-h-svh bg-paper">
+      <header className="border-b-[3px] border-black bg-white px-6 py-4">
+        <Link to="/" className="text-lg font-black text-black">
           Geullog
         </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-12">
         {notFound && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm font-bold text-black/60">
             존재하지 않거나 비공개로 전환된 글이에요.{' '}
-            <Link to="/" className="text-gray-900 underline">
+            <Link to="/" className="text-black underline">
               홈으로 돌아가기
             </Link>
           </p>
         )}
 
         {text !== null && (
-          <div className="flex flex-col gap-6 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-            {docTypeLabel && (
-              <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                {docTypeLabel}
-              </span>
-            )}
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">{text}</p>
+          <div className="brutal-card flex flex-col gap-6 p-8">
+            {docTypeLabel && <span className="brutal-badge w-fit">{docTypeLabel}</span>}
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">{text}</p>
           </div>
         )}
 
         {text !== null && (
-          <Link
-            to="/"
-            className="rounded-lg bg-gray-900 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-gray-700"
-          >
+          <Link to="/" className="brutal-btn-primary w-full">
             나도 Geullog로 만들어보기
           </Link>
         )}
