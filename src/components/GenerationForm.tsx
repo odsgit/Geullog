@@ -92,10 +92,10 @@ export function GenerationForm() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <form onSubmit={handleSubmit(generate)} className="brutal-card flex flex-col gap-6 p-8">
+      <form onSubmit={handleSubmit(generate)} className="card flex flex-col gap-6 p-8">
         <div>
-          <h1 className="text-2xl font-black text-black">글 생성하기</h1>
-          <p className="mt-1 text-sm font-medium text-black/60">
+          <h1 className="font-serif text-2xl font-semibold text-ink">글 생성하기</h1>
+          <p className="mt-1 text-sm text-ink/60">
             주제와 원하는 스타일을 알려주시면 AI가 글을 완성해드려요.
           </p>
         </div>
@@ -155,7 +155,7 @@ export function GenerationForm() {
         <button
           type="submit"
           disabled={status === 'analyzing_image' || status === 'streaming'}
-          className="brutal-btn-primary w-full"
+          className="btn-primary w-full"
         >
           {status === 'analyzing_image'
             ? '사진 분석 중...'
@@ -171,9 +171,9 @@ export function GenerationForm() {
               value={templateTitle}
               onChange={(event) => setTemplateTitle(event.target.value)}
               placeholder="템플릿 이름"
-              className="brutal-input flex-1"
+              className="input flex-1"
             />
-            <button type="button" onClick={handleSaveTemplate} className="brutal-btn-sm">
+            <button type="button" onClick={handleSaveTemplate} className="btn-sm">
               저장
             </button>
           </div>
@@ -181,7 +181,7 @@ export function GenerationForm() {
           <button
             type="button"
             onClick={() => setShowTemplateTitleInput(true)}
-            className="text-sm font-bold text-black/50 hover:text-black"
+            className="text-sm text-ink/50 hover:text-ink"
           >
             {templateSaved ? '템플릿 갤러리에 저장되었습니다!' : '이 설정을 템플릿으로 저장'}
           </button>
@@ -189,21 +189,21 @@ export function GenerationForm() {
       </form>
 
       {status === 'done' && generationId ? (
-        <div className="brutal-card p-8">
+        <div className="card p-8">
           <GenerationResult key={generationId} generationId={generationId} initialText={output} />
         </div>
       ) : (
         (output || status === 'error' || status === 'analyzing_image') && (
-          <div className="brutal-card p-8">
-            {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+          <div className="card p-8">
+            {error && <p className="text-sm text-red-600">{error}</p>}
             {status === 'analyzing_image' && (
-              <p className="text-sm font-bold text-black/50">사진을 분석하고 있어요...</p>
+              <p className="text-sm text-ink/50">사진을 분석하고 있어요...</p>
             )}
             {output && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">{output}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{output}</p>
             )}
             {status === 'done' && remainingCredits !== null && (
-              <p className="mt-4 text-xs font-bold text-black/50">남은 크레딧: {remainingCredits}</p>
+              <p className="mt-4 text-xs text-ink/50">남은 크레딧: {remainingCredits}</p>
             )}
           </div>
         )

@@ -55,27 +55,25 @@ export function TemplateDetailPage() {
 
   return (
     <div className="min-h-svh bg-paper">
-      <header className="border-b-[3px] border-black bg-white px-6 py-4">
-        <Link to="/" className="text-lg font-black text-black">
+      <header className="border-b border-line bg-white px-6 py-4">
+        <Link to="/" className="font-serif text-lg font-semibold text-ink">
           Geullog
         </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-12">
-        <Link to="/templates" className="text-sm font-bold text-black/60 hover:text-black">
+        <Link to="/templates" className="text-sm text-ink/60 hover:text-ink">
           ← 템플릿 갤러리로 돌아가기
         </Link>
 
         {notFound && (
-          <p className="text-sm font-bold text-black/60">
-            존재하지 않거나 비공개로 전환된 템플릿이에요.
-          </p>
+          <p className="text-sm text-ink/60">존재하지 않거나 비공개로 전환된 템플릿이에요.</p>
         )}
 
         {template && (
-          <div className="brutal-card flex flex-col gap-6 p-8">
+          <div className="card flex flex-col gap-6 p-8">
             <div>
-              <h1 className="text-xl font-black text-black">{template.title}</h1>
+              <h1 className="font-serif text-xl font-semibold text-ink">{template.title}</h1>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {[
                   labelOf(docTypeOptions, template.doc_type),
@@ -86,7 +84,7 @@ export function TemplateDetailPage() {
                 ]
                   .filter(Boolean)
                   .map((label) => (
-                    <span key={label} className="brutal-badge">
+                    <span key={label} className="badge">
                       {label}
                     </span>
                   ))}
@@ -94,12 +92,12 @@ export function TemplateDetailPage() {
             </div>
 
             {template.prompt_text && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-black/80">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">
                 {template.prompt_text}
               </p>
             )}
 
-            <Link to="/" onClick={handleStart} className="brutal-btn-primary">
+            <Link to="/" onClick={handleStart} className="btn-primary">
               이 템플릿으로 시작하기
             </Link>
           </div>

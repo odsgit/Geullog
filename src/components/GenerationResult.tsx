@@ -142,7 +142,7 @@ export function GenerationResult({
     <div className="flex flex-col gap-4">
       <RichTextEditor ref={editorRef} content={initialText} />
 
-      {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
         {(['regenerate', 'more_casual', 'more_formal'] as const).map((mode) => (
@@ -151,31 +151,31 @@ export function GenerationResult({
             type="button"
             onClick={() => runAction(mode)}
             disabled={busy !== null}
-            className="brutal-btn-sm"
+            className="btn-sm"
           >
             {busy === mode ? '처리 중...' : actionLabels[mode]}
           </button>
         ))}
-        <div className="mx-1 h-full w-[3px] self-stretch bg-black" />
-        <button type="button" onClick={handleExportTxt} className="brutal-btn-sm">
+        <div className="mx-1 h-full w-px self-stretch bg-line" />
+        <button type="button" onClick={handleExportTxt} className="btn-sm">
           .txt 내보내기
         </button>
-        <button type="button" onClick={handleExportDocx} className="brutal-btn-sm">
+        <button type="button" onClick={handleExportDocx} className="btn-sm">
           .docx 내보내기
         </button>
-        <div className="mx-1 h-full w-[3px] self-stretch bg-black" />
-        <button type="button" onClick={handleShare} className="brutal-btn-sm">
+        <div className="mx-1 h-full w-px self-stretch bg-line" />
+        <button type="button" onClick={handleShare} className="btn-sm">
           {shareCopied ? '링크가 복사되었습니다!' : isPublic ? '공유 링크 복사' : '공유하기'}
         </button>
         {isPublic && (
-          <button type="button" onClick={handleUnpublish} className="brutal-btn-sm">
+          <button type="button" onClick={handleUnpublish} className="btn-sm">
             비공개로 전환
           </button>
         )}
       </div>
 
       {remainingCredits !== null && (
-        <p className="text-xs font-bold text-black/50">남은 크레딧: {remainingCredits}</p>
+        <p className="text-xs text-ink/50">남은 크레딧: {remainingCredits}</p>
       )}
     </div>
   )

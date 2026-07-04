@@ -39,31 +39,31 @@ export function SharePage() {
 
   return (
     <div className="min-h-svh bg-paper">
-      <header className="border-b-[3px] border-black bg-white px-6 py-4">
-        <Link to="/" className="text-lg font-black text-black">
+      <header className="border-b border-line bg-white px-6 py-4">
+        <Link to="/" className="font-serif text-lg font-semibold text-ink">
           Geullog
         </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-12">
         {notFound && (
-          <p className="text-sm font-bold text-black/60">
+          <p className="text-sm text-ink/60">
             존재하지 않거나 비공개로 전환된 글이에요.{' '}
-            <Link to="/" className="text-black underline">
+            <Link to="/" className="text-ink underline">
               홈으로 돌아가기
             </Link>
           </p>
         )}
 
         {text !== null && (
-          <div className="brutal-card flex flex-col gap-6 p-8">
-            {docTypeLabel && <span className="brutal-badge w-fit">{docTypeLabel}</span>}
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">{text}</p>
+          <div className="card flex flex-col gap-6 p-8">
+            {docTypeLabel && <span className="badge w-fit">{docTypeLabel}</span>}
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{text}</p>
           </div>
         )}
 
         {text !== null && (
-          <Link to="/" className="brutal-btn-primary w-full">
+          <Link to="/" className="btn-primary w-full">
             나도 Geullog로 만들어보기
           </Link>
         )}

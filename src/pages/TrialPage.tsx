@@ -15,8 +15,7 @@ import {
   generationFormSchema,
   type GenerationFormValues,
 } from '@/lib/generationSchema'
-
-const TRIAL_USED_KEY = 'geullog_trial_used'
+import { TRIAL_USED_KEY } from '@/lib/trialStorage'
 
 export function TrialPage() {
   const alreadyTried =
@@ -41,29 +40,29 @@ export function TrialPage() {
 
   return (
     <div className="min-h-svh bg-paper">
-      <header className="border-b-[3px] border-black bg-white px-6 py-4">
-        <Link to="/" className="text-lg font-black text-black">
+      <header className="border-b border-line bg-white px-6 py-4">
+        <Link to="/" className="font-serif text-lg font-semibold text-ink">
           Geullog
         </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-12">
         <div>
-          <h1 className="text-2xl font-black text-black">무료로 체험해보기</h1>
-          <p className="mt-1 text-sm font-medium text-black/60">
+          <h1 className="font-serif text-2xl font-semibold text-ink">무료로 체험해보기</h1>
+          <p className="mt-1 text-sm text-ink/60">
             가입 없이 1회 무료로 AI 글쓰기를 체험할 수 있어요.
           </p>
         </div>
 
         {alreadyTried ? (
-          <div className="brutal-card p-8 text-center">
-            <p className="text-sm font-bold text-black/70">이미 무료 체험을 사용하셨어요.</p>
-            <Link to="/login" className="brutal-btn-primary mt-4 inline-flex">
+          <div className="card p-8 text-center">
+            <p className="text-sm text-ink/70">이미 무료 체험을 사용하셨어요.</p>
+            <Link to="/login" className="btn-primary mt-4 inline-flex">
               가입하고 계속 쓰기
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="brutal-card flex flex-col gap-6 p-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="card flex flex-col gap-6 p-8">
             <TextArea
               label="주제 / 키워드"
               placeholder="예: 여름 휴가지로 제주도를 추천하는 이유"
@@ -110,38 +109,38 @@ export function TrialPage() {
               />
             </div>
 
-            <button type="submit" disabled={status === 'streaming'} className="brutal-btn-primary">
+            <button type="submit" disabled={status === 'streaming'} className="btn-primary">
               {status === 'streaming' ? '생성 중...' : '무료로 체험 생성하기'}
             </button>
           </form>
         )}
 
         {(output || error) && (
-          <div className="brutal-card p-8">
-            {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+          <div className="card p-8">
+            {error && <p className="text-sm text-red-600">{error}</p>}
             {output && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">{output}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{output}</p>
             )}
           </div>
         )}
       </main>
 
       {showSignupModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 px-4">
-          <div className="brutal-card w-full max-w-sm p-8 text-center">
-            <h2 className="text-xl font-black text-black">체험은 어떠셨나요?</h2>
-            <p className="mt-2 text-sm font-medium text-black/60">
+        <div className="fixed inset-0 flex items-center justify-center bg-ink/50 px-4">
+          <div className="card w-full max-w-sm p-8 text-center">
+            <h2 className="font-serif text-xl font-semibold text-ink">체험은 어떠셨나요?</h2>
+            <p className="mt-2 text-sm text-ink/60">
               가입하면 매달 무료 크레딧으로 더 많이 쓸 수 있고, 히스토리 저장과 편집도
               가능해요.
             </p>
             <div className="mt-6 flex flex-col gap-2">
-              <Link to="/login" className="brutal-btn-primary">
+              <Link to="/login" className="btn-primary">
                 가입하러 가기
               </Link>
               <button
                 type="button"
                 onClick={() => setShowSignupModal(false)}
-                className="text-sm font-bold text-black/50 hover:text-black"
+                className="text-sm text-ink/50 hover:text-ink"
               >
                 닫기
               </button>
