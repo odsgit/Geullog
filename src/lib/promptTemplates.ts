@@ -40,7 +40,12 @@ const lengthInstructions: Record<string, string> = {
 const languageInstructions: Record<string, string> = {
   ko: '한국어로 작성하세요.',
   en: 'Write in English.',
-  ja: '日本語で書いてください。',
+}
+
+// Falls back to a generic instruction for any language the user typed in
+// themselves beyond the ko/en quick picks (e.g. "프랑스어", "베트남어").
+function languageInstruction(language: string): string {
+  return languageInstructions[language] ?? `${language}로 작성하세요.`
 }
 
 export const NO_MARKDOWN_INSTRUCTION =
@@ -61,7 +66,7 @@ export function buildPrompt(
     toneInstructions[input.tone],
     targetAudienceInstructions[input.targetAudience],
     lengthInstructions[input.length],
-    languageInstructions[input.language],
+    languageInstruction(input.language),
     authorStyleDescription ? `다음 문체를 참고해서 작성하세요: ${authorStyleDescription}` : null,
     narrativeTypeDescription ? `다음 서술 방식으로 작성하세요: ${narrativeTypeDescription}` : null,
     continuationContext

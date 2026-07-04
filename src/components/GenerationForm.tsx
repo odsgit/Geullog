@@ -47,6 +47,7 @@ export function GenerationForm() {
     resolver: zodResolver(generationFormSchema),
     defaultValues: { inputImageUrls: [] },
   })
+  const [useCustomLanguage, setUseCustomLanguage] = useState(false)
   const { output, status, error, remainingCredits, generationId, generate } = useGeneration()
 
   const [showTemplateTitleInput, setShowTemplateTitleInput] = useState(false)
@@ -95,6 +96,7 @@ export function GenerationForm() {
             language: 'ko',
             inputImageUrls: [],
           })
+          setUseCustomLanguage(false)
         }
         localStorage.removeItem(TEMPLATE_STORAGE_KEY)
       })
@@ -113,6 +115,7 @@ export function GenerationForm() {
       .single()
       .then(({ data }) => {
         if (data) {
+          const language = data.language ?? 'ko'
           reset({
             inputText: '',
             docType: (data.doc_type ?? docTypeOptions[0].value) as GenerationFormValues['docType'],
@@ -121,12 +124,13 @@ export function GenerationForm() {
             targetAudience: (data.target_audience ??
               targetAudienceOptions[0].value) as GenerationFormValues['targetAudience'],
             length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
-            language: (data.language ?? 'ko') as GenerationFormValues['language'],
+            language,
             inputImageUrls: [],
             authorStyleId: data.author_style_id ?? undefined,
             narrativeTypeId: data.narrative_type_id ?? undefined,
             continueFromGenerationId: continueId,
           })
+          setUseCustomLanguage(language !== 'ko' && language !== 'en')
           setContinuingFromId(continueId)
         }
         localStorage.removeItem(CONTINUE_STORAGE_KEY)
@@ -147,6 +151,7 @@ export function GenerationForm() {
 
   function handleCancelContinuation() {
     setContinuingFromId(null)
+    setUseCustomLanguage(false)
     reset({
       inputText: '',
       inputImageUrls: [],
@@ -154,6 +159,11 @@ export function GenerationForm() {
       narrativeTypeId: undefined,
       continueFromGenerationId: undefined,
     })
+  }
+
+  function handleToggleCustomLanguage() {
+    setUseCustomLanguage((current) => !current)
+    setValue('language', '')
   }
 
   async function handleSaveTemplate() {
@@ -274,12 +284,36 @@ export function GenerationForm() {
             error={errors.length?.message}
             {...register('length')}
           />
-          <Select
-            label="언어"
-            options={[...languageOptions]}
-            error={errors.language?.message}
-            {...register('language')}
-          />
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-ink/80">언어</label>
+              <button
+                type="button"
+                onClick={handleToggleCustomLanguage}
+                className="text-xs text-ink/50 hover:text-ink"
+              >
+                {useCustomLanguage ? '목록에서 선택' : '직접 입력'}
+              </button>
+            </div>
+            {useCustomLanguage ? (
+              <input
+                type="text"
+                placeholder="예: 프랑스어, 베트남어, 스페인어"
+                className="input"
+                {...register('language')}
+              />
+            ) : (
+              <select className="input" {...register('language')}>
+                <option value="">선택해주세요</option>
+                {languageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {errors.language && <p className="text-sm text-red-600">{errors.language.message}</p>}
+          </div>
         </div>
 
         <button
