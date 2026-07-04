@@ -61,6 +61,7 @@ export const generationFormSchema = z.object({
   inputImageUrls: z.array(z.string()),
   authorStyleId: z.string().optional(),
   narrativeTypeId: z.string().optional(),
+  detailedGenre: z.string().optional(),
   continueFromGenerationId: z.string().optional(),
 })
 
