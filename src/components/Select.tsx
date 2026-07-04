@@ -9,10 +9,11 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'chi
   label: string
   options: SelectOption[]
   error?: string
+  placeholder?: string
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, options, error, id, ...props }, ref) => {
+  ({ label, options, error, placeholder = '선택해주세요', id, ...props }, ref) => {
     const selectId = id ?? props.name
 
     return (
@@ -26,7 +27,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           className={`input ${error ? 'border-red-400' : ''}`}
           {...props}
         >
-          <option value="">선택해주세요</option>
+          <option value="">{placeholder}</option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

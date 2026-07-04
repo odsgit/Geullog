@@ -57,6 +57,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const readable = new ReadableStream({
     async start(controller) {
       try {
+        let authorStyleDescription: string | null = null
+        if (input.authorStyleId) {
+          const { data: authorStyle } = await supabase
+            .from('author_styles')
+            .select('style_description')
+            .eq('id', input.authorStyleId)
+            .single()
+          authorStyleDescription = authorStyle?.style_description ?? null
+        }
+
         let imageDescription: string | null = null
 
         if (input.inputImageUrls.length > 0) {
@@ -84,7 +94,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           tokensUsed += visionResponse.usage?.total_tokens ?? 0
         }
 
-        const { system, user: userPrompt } = buildPrompt(input, imageDescription)
+        const { system, user: userPrompt } = buildPrompt(input, imageDescription, authorStyleDescription)
 
         const stream = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
@@ -118,6 +128,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           p_language: input.language,
           p_output_text: fullText,
           p_tokens_used: tokensUsed,
+          p_author_style_id: input.authorStyleId || null,
         })
 
         if (recordError) {

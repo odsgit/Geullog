@@ -20,6 +20,12 @@ import {
   type GenerationFormValues,
 } from '@/lib/generationSchema'
 
+interface AuthorStyleOption {
+  id: string
+  name: string
+  representative_works: string | null
+}
+
 export function GenerationForm() {
   const { user } = useAuth()
   const {
@@ -38,6 +44,15 @@ export function GenerationForm() {
   const [showTemplateTitleInput, setShowTemplateTitleInput] = useState(false)
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateSaved, setTemplateSaved] = useState(false)
+  const [authorStyles, setAuthorStyles] = useState<AuthorStyleOption[]>([])
+
+  useEffect(() => {
+    supabase
+      .from('author_styles')
+      .select('id, name, representative_works')
+      .order('name')
+      .then(({ data }) => setAuthorStyles(data ?? []))
+  }, [])
 
   useEffect(() => {
     const templateId = localStorage.getItem(TEMPLATE_STORAGE_KEY)
@@ -111,6 +126,19 @@ export function GenerationForm() {
           control={control}
           name="inputImageUrls"
           render={({ field }) => <ImageUpload value={field.value} onChange={field.onChange} />}
+        />
+
+        <Select
+          label="작가 스타일 (선택)"
+          placeholder="선택 안 함"
+          options={authorStyles.map((style) => ({
+            value: style.id,
+            label: style.representative_works
+              ? `${style.name} (${style.representative_works})`
+              : style.name,
+          }))}
+          error={errors.authorStyleId?.message}
+          {...register('authorStyleId')}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
