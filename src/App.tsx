@@ -5,6 +5,8 @@ import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage'
+import { SeriesPage } from '@/pages/SeriesPage'
+import { SeriesDetailPage } from '@/pages/SeriesDetailPage'
 import { SharePage } from '@/pages/SharePage'
 import { TrialPage } from '@/pages/TrialPage'
 import { TemplateGalleryPage } from '@/pages/TemplateGalleryPage'
@@ -28,6 +30,8 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/history/:id" element={<HistoryDetailPage />} />
+            <Route path="/series" element={<SeriesPage />} />
+            <Route path="/series/:id" element={<SeriesDetailPage />} />
           </Route>
         </Routes>
       </AuthProvider>

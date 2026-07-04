@@ -40,6 +40,9 @@ export function AppHeader() {
         <Link to="/history" className="text-sm font-medium text-ink/60 hover:text-ink">
           히스토리
         </Link>
+        <Link to="/series" className="text-sm font-medium text-ink/60 hover:text-ink">
+          시리즈
+        </Link>
         <Link to="/templates" className="text-sm font-medium text-ink/60 hover:text-ink">
           템플릿
         </Link>

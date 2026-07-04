@@ -69,6 +69,35 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_series: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_series_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generation_versions: {
         Row: {
           created_at: string
@@ -114,6 +143,8 @@ export type Database = {
           length: string | null
           narrative_type_id: string | null
           output_text: string | null
+          part_number: number | null
+          series_id: string | null
           style: string | null
           target_audience: string | null
           tokens_used: number | null
@@ -132,6 +163,8 @@ export type Database = {
           length?: string | null
           narrative_type_id?: string | null
           output_text?: string | null
+          part_number?: number | null
+          series_id?: string | null
           style?: string | null
           target_audience?: string | null
           tokens_used?: number | null
@@ -150,6 +183,8 @@ export type Database = {
           length?: string | null
           narrative_type_id?: string | null
           output_text?: string | null
+          part_number?: number | null
+          series_id?: string | null
           style?: string | null
           target_audience?: string | null
           tokens_used?: number | null
@@ -169,6 +204,13 @@ export type Database = {
             columns: ["narrative_type_id"]
             isOneToOne: false
             referencedRelation: "narrative_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generations_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "generation_series"
             referencedColumns: ["id"]
           },
           {
@@ -372,6 +414,8 @@ export type Database = {
           p_length: string
           p_narrative_type_id?: string
           p_output_text: string
+          p_part_number?: number
+          p_series_id?: string
           p_style: string
           p_target_audience: string
           p_tokens_used: number
