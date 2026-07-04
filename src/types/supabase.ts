@@ -170,6 +170,7 @@ export type Database = {
           created_at: string
           doc_type: string | null
           id: string
+          is_public: boolean
           length: string | null
           prompt_text: string | null
           style: string | null
@@ -182,6 +183,7 @@ export type Database = {
           created_at?: string
           doc_type?: string | null
           id?: string
+          is_public?: boolean
           length?: string | null
           prompt_text?: string | null
           style?: string | null
@@ -194,6 +196,7 @@ export type Database = {
           created_at?: string
           doc_type?: string | null
           id?: string
+          is_public?: boolean
           length?: string | null
           prompt_text?: string | null
           style?: string | null

@@ -125,6 +125,12 @@ export function LoginPage() {
         >
           가입 없이 먼저 체험해보기
         </Link>
+        <Link
+          to="/templates"
+          className="mt-2 block w-full text-center text-sm text-gray-400 hover:text-gray-600"
+        >
+          템플릿 갤러리 둘러보기
+        </Link>
       </div>
     </div>
   )

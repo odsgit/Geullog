@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Select } from '@/components/Select'
@@ -5,6 +6,9 @@ import { TextArea } from '@/components/TextArea'
 import { ImageUpload } from '@/components/ImageUpload'
 import { GenerationResult } from '@/components/GenerationResult'
 import { useGeneration } from '@/hooks/useGeneration'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
+import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
 import {
   docTypeOptions,
   styleOptions,
@@ -17,16 +21,74 @@ import {
 } from '@/lib/generationSchema'
 
 export function GenerationForm() {
+  const { user } = useAuth()
   const {
     register,
     control,
     handleSubmit,
+    getValues,
+    reset,
     formState: { errors },
   } = useForm<GenerationFormValues>({
     resolver: zodResolver(generationFormSchema),
     defaultValues: { inputImageUrls: [] },
   })
   const { output, status, error, remainingCredits, generationId, generate } = useGeneration()
+
+  const [showTemplateTitleInput, setShowTemplateTitleInput] = useState(false)
+  const [templateTitle, setTemplateTitle] = useState('')
+  const [templateSaved, setTemplateSaved] = useState(false)
+
+  useEffect(() => {
+    const templateId = localStorage.getItem(TEMPLATE_STORAGE_KEY)
+    if (!templateId) return
+
+    supabase
+      .from('templates')
+      .select('doc_type, style, tone, target_audience, length, prompt_text')
+      .eq('id', templateId)
+      .eq('is_public', true)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          reset({
+            inputText: data.prompt_text ?? '',
+            docType: (data.doc_type ?? docTypeOptions[0].value) as GenerationFormValues['docType'],
+            style: (data.style ?? styleOptions[0].value) as GenerationFormValues['style'],
+            tone: (data.tone ?? toneOptions[0].value) as GenerationFormValues['tone'],
+            targetAudience: (data.target_audience ??
+              targetAudienceOptions[0].value) as GenerationFormValues['targetAudience'],
+            length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
+            language: 'ko',
+            inputImageUrls: [],
+          })
+        }
+        localStorage.removeItem(TEMPLATE_STORAGE_KEY)
+      })
+  }, [reset])
+
+  async function handleSaveTemplate() {
+    if (!user || !templateTitle.trim()) return
+
+    const values = getValues()
+    const { error: insertError } = await supabase.from('templates').insert({
+      user_id: user.id,
+      title: templateTitle.trim(),
+      doc_type: values.docType,
+      style: values.style,
+      tone: values.tone,
+      target_audience: values.targetAudience,
+      length: values.length,
+      prompt_text: values.inputText,
+      is_public: true,
+    })
+
+    if (!insertError) {
+      setTemplateSaved(true)
+      setShowTemplateTitleInput(false)
+      setTemplateTitle('')
+    }
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -104,6 +166,33 @@ export function GenerationForm() {
               ? '생성 중...'
               : '글 생성하기'}
         </button>
+
+        {showTemplateTitleInput ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={templateTitle}
+              onChange={(event) => setTemplateTitle(event.target.value)}
+              placeholder="템플릿 이름"
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleSaveTemplate}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              저장
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowTemplateTitleInput(true)}
+            className="text-sm text-gray-400 hover:text-gray-600"
+          >
+            {templateSaved ? '템플릿 갤러리에 저장되었습니다!' : '이 설정을 템플릿으로 저장'}
+          </button>
+        )}
       </form>
 
       {status === 'done' && generationId ? (

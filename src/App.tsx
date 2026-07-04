@@ -7,6 +7,8 @@ import { HistoryPage } from '@/pages/HistoryPage'
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage'
 import { SharePage } from '@/pages/SharePage'
 import { TrialPage } from '@/pages/TrialPage'
+import { TemplateGalleryPage } from '@/pages/TemplateGalleryPage'
+import { TemplateDetailPage } from '@/pages/TemplateDetailPage'
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/share/:id" element={<SharePage />} />
           <Route path="/trial" element={<TrialPage />} />
+          <Route path="/templates" element={<TemplateGalleryPage />} />
+          <Route path="/templates/:id" element={<TemplateDetailPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
