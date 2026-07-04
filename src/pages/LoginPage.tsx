@@ -131,6 +131,12 @@ export function LoginPage() {
         >
           템플릿 갤러리 둘러보기
         </Link>
+        <Link
+          to="/blog"
+          className="mt-2 block w-full text-center text-sm text-gray-400 hover:text-gray-600"
+        >
+          블로그 둘러보기
+        </Link>
       </div>
     </div>
   )

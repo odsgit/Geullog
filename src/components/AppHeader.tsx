@@ -43,6 +43,9 @@ export function AppHeader() {
         <Link to="/templates" className="text-sm text-gray-500 hover:text-gray-700">
           템플릿
         </Link>
+        <Link to="/blog" className="text-sm text-gray-500 hover:text-gray-700">
+          블로그
+        </Link>
       </div>
       <div className="flex items-center gap-3 text-sm text-gray-500">
         {credits !== null && <span>크레딧 {credits}개</span>}
