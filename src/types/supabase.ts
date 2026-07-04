@@ -112,6 +112,7 @@ export type Database = {
           is_public: boolean
           language: string | null
           length: string | null
+          narrative_type_id: string | null
           output_text: string | null
           style: string | null
           target_audience: string | null
@@ -129,6 +130,7 @@ export type Database = {
           is_public?: boolean
           language?: string | null
           length?: string | null
+          narrative_type_id?: string | null
           output_text?: string | null
           style?: string | null
           target_audience?: string | null
@@ -146,6 +148,7 @@ export type Database = {
           is_public?: boolean
           language?: string | null
           length?: string | null
+          narrative_type_id?: string | null
           output_text?: string | null
           style?: string | null
           target_audience?: string | null
@@ -162,6 +165,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "generations_narrative_type_id_fkey"
+            columns: ["narrative_type_id"]
+            isOneToOne: false
+            referencedRelation: "narrative_types"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "generations_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -169,6 +179,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      narrative_types: {
+        Row: {
+          core_elements: string | null
+          created_at: string
+          definition: string
+          example_genres: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          core_elements?: string | null
+          created_at?: string
+          definition: string
+          example_genres?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          core_elements?: string | null
+          created_at?: string
+          definition?: string
+          example_genres?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -333,6 +370,7 @@ export type Database = {
           p_input_text: string
           p_language: string
           p_length: string
+          p_narrative_type_id?: string
           p_output_text: string
           p_style: string
           p_target_audience: string

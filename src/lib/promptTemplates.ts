@@ -50,6 +50,7 @@ export function buildPrompt(
   input: GenerationFormValues,
   imageDescription?: string | null,
   authorStyleDescription?: string | null,
+  narrativeTypeDescription?: string | null,
 ) {
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
@@ -61,6 +62,7 @@ export function buildPrompt(
     lengthInstructions[input.length],
     languageInstructions[input.language],
     authorStyleDescription ? `다음 문체를 참고해서 작성하세요: ${authorStyleDescription}` : null,
+    narrativeTypeDescription ? `다음 서술 방식으로 작성하세요: ${narrativeTypeDescription}` : null,
   ]
     .filter(Boolean)
     .join(' ')

@@ -67,6 +67,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           authorStyleDescription = authorStyle?.style_description ?? null
         }
 
+        let narrativeTypeDescription: string | null = null
+        if (input.narrativeTypeId) {
+          const { data: narrativeType } = await supabase
+            .from('narrative_types')
+            .select('definition, core_elements')
+            .eq('id', input.narrativeTypeId)
+            .single()
+          narrativeTypeDescription = narrativeType
+            ? `${narrativeType.definition}${narrativeType.core_elements ? ` (특히 ${narrativeType.core_elements}에 집중하세요)` : ''}`
+            : null
+        }
+
         let imageDescription: string | null = null
 
         if (input.inputImageUrls.length > 0) {
@@ -94,7 +106,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           tokensUsed += visionResponse.usage?.total_tokens ?? 0
         }
 
-        const { system, user: userPrompt } = buildPrompt(input, imageDescription, authorStyleDescription)
+        const { system, user: userPrompt } = buildPrompt(
+          input,
+          imageDescription,
+          authorStyleDescription,
+          narrativeTypeDescription,
+        )
 
         const stream = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
@@ -129,6 +146,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           p_output_text: fullText,
           p_tokens_used: tokensUsed,
           p_author_style_id: input.authorStyleId || null,
+          p_narrative_type_id: input.narrativeTypeId || null,
         })
 
         if (recordError) {

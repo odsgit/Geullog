@@ -121,7 +121,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             authorStyleDescription = authorStyle?.style_description ?? null
           }
 
-          const built = buildPrompt(formValues, imageDescription, authorStyleDescription)
+          let narrativeTypeDescription: string | null = null
+          if (generation.narrative_type_id) {
+            const { data: narrativeType } = await supabase
+              .from('narrative_types')
+              .select('definition, core_elements')
+              .eq('id', generation.narrative_type_id)
+              .single()
+            narrativeTypeDescription = narrativeType
+              ? `${narrativeType.definition}${narrativeType.core_elements ? ` (특히 ${narrativeType.core_elements}에 집중하세요)` : ''}`
+              : null
+          }
+
+          const built = buildPrompt(
+            formValues,
+            imageDescription,
+            authorStyleDescription,
+            narrativeTypeDescription,
+          )
           system = built.system
           userPrompt = built.user
         } else {

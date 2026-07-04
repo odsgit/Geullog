@@ -27,6 +27,11 @@ interface AuthorStyleOption {
   representative_works: string | null
 }
 
+interface NarrativeTypeOption {
+  id: string
+  name: string
+}
+
 export function GenerationForm() {
   const { user } = useAuth()
   const {
@@ -46,6 +51,7 @@ export function GenerationForm() {
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateSaved, setTemplateSaved] = useState(false)
   const [authorStyles, setAuthorStyles] = useState<AuthorStyleOption[]>([])
+  const [narrativeTypes, setNarrativeTypes] = useState<NarrativeTypeOption[]>([])
 
   useEffect(() => {
     supabase
@@ -53,6 +59,14 @@ export function GenerationForm() {
       .select('id, name, nationality, representative_works')
       .order('name')
       .then(({ data }) => setAuthorStyles(data ?? []))
+  }, [])
+
+  useEffect(() => {
+    supabase
+      .from('narrative_types')
+      .select('id, name')
+      .order('name')
+      .then(({ data }) => setNarrativeTypes(data ?? []))
   }, [])
 
   useEffect(() => {
@@ -143,6 +157,14 @@ export function GenerationForm() {
           })}
           error={errors.authorStyleId?.message}
           {...register('authorStyleId')}
+        />
+
+        <Select
+          label="서술 유형 (선택)"
+          placeholder="선택 안 함"
+          options={narrativeTypes.map((type) => ({ value: type.id, label: type.name }))}
+          error={errors.narrativeTypeId?.message}
+          {...register('narrativeTypeId')}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
