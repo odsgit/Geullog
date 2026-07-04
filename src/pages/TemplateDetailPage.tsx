@@ -54,26 +54,28 @@ export function TemplateDetailPage() {
   }
 
   return (
-    <div className="min-h-svh bg-gray-50">
-      <header className="border-b border-gray-100 bg-white px-6 py-4">
-        <Link to="/" className="text-sm font-semibold text-gray-900">
+    <div className="min-h-svh bg-paper">
+      <header className="border-b-[3px] border-black bg-white px-6 py-4">
+        <Link to="/" className="text-lg font-black text-black">
           Geullog
         </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-12">
-        <Link to="/templates" className="text-sm text-gray-500 hover:text-gray-700">
+        <Link to="/templates" className="text-sm font-bold text-black/60 hover:text-black">
           ← 템플릿 갤러리로 돌아가기
         </Link>
 
         {notFound && (
-          <p className="text-sm text-gray-500">존재하지 않거나 비공개로 전환된 템플릿이에요.</p>
+          <p className="text-sm font-bold text-black/60">
+            존재하지 않거나 비공개로 전환된 템플릿이에요.
+          </p>
         )}
 
         {template && (
-          <div className="flex flex-col gap-6 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+          <div className="brutal-card flex flex-col gap-6 p-8">
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">{template.title}</h1>
+              <h1 className="text-xl font-black text-black">{template.title}</h1>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {[
                   labelOf(docTypeOptions, template.doc_type),
@@ -84,10 +86,7 @@ export function TemplateDetailPage() {
                 ]
                   .filter(Boolean)
                   .map((label) => (
-                    <span
-                      key={label}
-                      className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600"
-                    >
+                    <span key={label} className="brutal-badge">
                       {label}
                     </span>
                   ))}
@@ -95,16 +94,12 @@ export function TemplateDetailPage() {
             </div>
 
             {template.prompt_text && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-black/80">
                 {template.prompt_text}
               </p>
             )}
 
-            <Link
-              to="/"
-              onClick={handleStart}
-              className="rounded-lg bg-gray-900 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-gray-700"
-            >
+            <Link to="/" onClick={handleStart} className="brutal-btn-primary">
               이 템플릿으로 시작하기
             </Link>
           </div>

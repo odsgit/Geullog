@@ -37,18 +37,18 @@ export function HistoryDetailPage() {
   }, [id])
 
   return (
-    <div className="min-h-svh bg-gray-50">
+    <div className="min-h-svh bg-paper">
       <AppHeader />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-12">
-        <Link to="/history" className="text-sm text-gray-500 hover:text-gray-700">
+        <Link to="/history" className="text-sm font-bold text-black/60 hover:text-black">
           ← 히스토리로 돌아가기
         </Link>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm font-bold text-red-500">{error}</p>}
 
         {initialText !== null && id && (
-          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+          <div className="brutal-card p-8">
             <GenerationResult
               key={id}
               generationId={id}

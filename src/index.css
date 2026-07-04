@@ -1,8 +1,14 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+@theme {
+  --color-brand: #ffd100;
+  --color-brand-dark: #ffc400;
+  --color-paper: #f7f3e8;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   font:
     16px/1.5 system-ui,
     'Segoe UI',
@@ -16,4 +22,40 @@ body {
 
 #root {
   min-height: 100svh;
+}
+
+/* Neubrutalism design system: thick black borders + hard offset shadows +
+   a single bold brand color, applied consistently across every page. */
+@layer components {
+  .brutal-card {
+    @apply rounded-2xl border-[3px] border-black bg-white shadow-[6px_6px_0_0_#000];
+  }
+
+  .brutal-card-link {
+    @apply rounded-2xl border-[3px] border-black bg-white shadow-[6px_6px_0_0_#000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_0_#000];
+  }
+
+  .brutal-btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border-[3px] border-black bg-white px-4 py-2.5 text-sm font-bold text-black shadow-[4px_4px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#000] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#000];
+  }
+
+  .brutal-btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border-[3px] border-black bg-brand px-4 py-2.5 text-sm font-bold text-black shadow-[4px_4px_0_0_#000] transition-all hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-[6px_6px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#000] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#000];
+  }
+
+  .brutal-btn-sm {
+    @apply inline-flex items-center justify-center rounded-lg border-[3px] border-black bg-white px-3 py-1.5 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_#000] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .brutal-input {
+    @apply w-full rounded-xl border-[3px] border-black bg-white px-3 py-2 text-sm font-medium text-black placeholder:text-black/40 focus:outline-none focus:shadow-[3px_3px_0_0_#000];
+  }
+
+  .brutal-badge {
+    @apply inline-flex items-center rounded-full border-2 border-black bg-white px-2.5 py-0.5 text-xs font-bold text-black;
+  }
+
+  .brutal-badge-brand {
+    @apply inline-flex items-center rounded-full border-2 border-black bg-brand px-2.5 py-0.5 text-xs font-bold text-black;
+  }
 }

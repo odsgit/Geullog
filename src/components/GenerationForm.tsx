@@ -92,13 +92,10 @@ export function GenerationForm() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <form
-        onSubmit={handleSubmit(generate)}
-        className="flex flex-col gap-6 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm"
-      >
+      <form onSubmit={handleSubmit(generate)} className="brutal-card flex flex-col gap-6 p-8">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">글 생성하기</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-black">글 생성하기</h1>
+          <p className="mt-1 text-sm font-medium text-black/60">
             주제와 원하는 스타일을 알려주시면 AI가 글을 완성해드려요.
           </p>
         </div>
@@ -158,7 +155,7 @@ export function GenerationForm() {
         <button
           type="submit"
           disabled={status === 'analyzing_image' || status === 'streaming'}
-          className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+          className="brutal-btn-primary w-full"
         >
           {status === 'analyzing_image'
             ? '사진 분석 중...'
@@ -174,13 +171,9 @@ export function GenerationForm() {
               value={templateTitle}
               onChange={(event) => setTemplateTitle(event.target.value)}
               placeholder="템플릿 이름"
-              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              className="brutal-input flex-1"
             />
-            <button
-              type="button"
-              onClick={handleSaveTemplate}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
+            <button type="button" onClick={handleSaveTemplate} className="brutal-btn-sm">
               저장
             </button>
           </div>
@@ -188,7 +181,7 @@ export function GenerationForm() {
           <button
             type="button"
             onClick={() => setShowTemplateTitleInput(true)}
-            className="text-sm text-gray-400 hover:text-gray-600"
+            className="text-sm font-bold text-black/50 hover:text-black"
           >
             {templateSaved ? '템플릿 갤러리에 저장되었습니다!' : '이 설정을 템플릿으로 저장'}
           </button>
@@ -196,21 +189,21 @@ export function GenerationForm() {
       </form>
 
       {status === 'done' && generationId ? (
-        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+        <div className="brutal-card p-8">
           <GenerationResult key={generationId} generationId={generationId} initialText={output} />
         </div>
       ) : (
         (output || status === 'error' || status === 'analyzing_image') && (
-          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-            {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="brutal-card p-8">
+            {error && <p className="text-sm font-bold text-red-500">{error}</p>}
             {status === 'analyzing_image' && (
-              <p className="text-sm text-gray-400">사진을 분석하고 있어요...</p>
+              <p className="text-sm font-bold text-black/50">사진을 분석하고 있어요...</p>
             )}
             {output && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">{output}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">{output}</p>
             )}
             {status === 'done' && remainingCredits !== null && (
-              <p className="mt-4 text-xs text-gray-400">남은 크레딧: {remainingCredits}</p>
+              <p className="mt-4 text-xs font-bold text-black/50">남은 크레딧: {remainingCredits}</p>
             )}
           </div>
         )

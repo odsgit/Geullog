@@ -32,7 +32,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     )
 
     return (
-      <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="rounded-xl border-[3px] border-black bg-white">
         <EditorContent
           editor={editor}
           className="prose prose-sm max-w-none p-4 [&_.ProseMirror]:min-h-32 [&_.ProseMirror]:outline-none"

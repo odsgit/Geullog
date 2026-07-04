@@ -76,25 +76,29 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-gray-700">사진 첨부 (선택)</label>
+      <label className="text-sm font-bold text-black">사진 첨부 (선택)</label>
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={handleFileChange}
         disabled={uploading}
-        className="text-sm text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700"
+        className="text-sm font-medium text-black/60 file:mr-3 file:rounded-lg file:border-[3px] file:border-black file:bg-brand file:px-3 file:py-2 file:text-sm file:font-bold file:text-black file:shadow-[3px_3px_0_0_#000] hover:file:bg-brand-dark"
       />
-      {uploading && <p className="text-sm text-gray-400">업로드 중...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {uploading && <p className="text-sm font-bold text-black/50">업로드 중...</p>}
+      {error && <p className="text-sm font-bold text-red-500">{error}</p>}
       {value.length > 0 && (
         <div className="mt-2 flex gap-2">
           {value.map((url) => (
             <div key={url} className="relative">
-              <img src={url} alt="첨부 이미지" className="h-20 w-20 rounded-lg object-cover" />
+              <img
+                src={url}
+                alt="첨부 이미지"
+                className="h-20 w-20 rounded-xl border-[3px] border-black object-cover"
+              />
               <button
                 type="button"
                 onClick={() => handleRemove(url)}
-                className="absolute -top-2 -right-2 rounded-full bg-gray-900 px-1.5 py-0.5 text-xs text-white"
+                className="absolute -top-2 -right-2 rounded-full border-2 border-black bg-brand px-1.5 py-0.5 text-xs font-bold text-black"
               >
                 ×
               </button>
