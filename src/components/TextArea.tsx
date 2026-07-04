@@ -11,17 +11,17 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
 
     return (
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={textareaId} className="text-sm font-bold text-black">
+        <label htmlFor={textareaId} className="text-sm font-semibold text-ink/80">
           {label}
         </label>
         <textarea
           id={textareaId}
           ref={ref}
           rows={4}
-          className={`brutal-input resize-y ${error ? 'border-red-500' : ''}`}
+          className={`input resize-y ${error ? 'border-red-400' : ''}`}
           {...props}
         />
-        {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     )
   },

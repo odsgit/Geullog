@@ -17,13 +17,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
     return (
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={selectId} className="text-sm font-bold text-black">
+        <label htmlFor={selectId} className="text-sm font-semibold text-ink/80">
           {label}
         </label>
         <select
           id={selectId}
           ref={ref}
-          className={`brutal-input ${error ? 'border-red-500' : ''}`}
+          className={`input ${error ? 'border-red-400' : ''}`}
           {...props}
         >
           <option value="">선택해주세요</option>
@@ -33,7 +33,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     )
   },

@@ -34,26 +34,23 @@ export function HistoryPage() {
       <AppHeader />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-12">
-        <h1 className="text-2xl font-black text-black">히스토리</h1>
+        <h1 className="font-serif text-2xl font-semibold text-ink">히스토리</h1>
 
-        {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         {generations && generations.length === 0 && (
-          <p className="text-sm font-bold text-black/50">아직 생성한 글이 없어요.</p>
+          <p className="text-sm text-ink/50">아직 생성한 글이 없어요.</p>
         )}
 
         <ul className="flex flex-col gap-3">
           {generations?.map((generation) => (
             <li key={generation.id}>
-              <Link
-                to={`/history/${generation.id}`}
-                className="brutal-card-link block p-5"
-              >
-                <div className="flex items-center justify-between text-xs font-bold text-black/50">
+              <Link to={`/history/${generation.id}`} className="card-link block p-5">
+                <div className="flex items-center justify-between text-xs text-ink/50">
                   <span>{docTypeLabel.get(generation.doc_type) ?? generation.doc_type}</span>
                   <span>{new Date(generation.created_at).toLocaleString('ko-KR')}</span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm text-black">
+                <p className="mt-2 line-clamp-2 text-sm text-ink">
                   {generation.output_text ?? generation.input_text}
                 </p>
               </Link>

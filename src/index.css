@@ -2,9 +2,11 @@
 @plugin '@tailwindcss/typography';
 
 @theme {
-  --color-brand: #ffd100;
-  --color-brand-dark: #ffc400;
-  --color-paper: #f7f3e8;
+  --color-ink: #2b2420;
+  --color-paper: #faf6ee;
+  --color-accent: #c1552f;
+  --color-accent-dark: #9c4325;
+  --color-line: #e7ddcf;
 }
 
 :root {
@@ -24,38 +26,38 @@ body {
   min-height: 100svh;
 }
 
-/* Neubrutalism design system: thick black borders + hard offset shadows +
-   a single bold brand color, applied consistently across every page. */
+/* Warm editorial design system: cream paper, ink text, a single terracotta
+   accent, soft borders and shadows. Applied consistently across every page. */
 @layer components {
-  .brutal-card {
-    @apply rounded-2xl border-[3px] border-black bg-white shadow-[6px_6px_0_0_#000];
+  .card {
+    @apply rounded-2xl border border-line bg-white shadow-sm;
   }
 
-  .brutal-card-link {
-    @apply rounded-2xl border-[3px] border-black bg-white shadow-[6px_6px_0_0_#000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_0_#000];
+  .card-link {
+    @apply rounded-2xl border border-line bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md;
   }
 
-  .brutal-btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border-[3px] border-black bg-white px-4 py-2.5 text-sm font-bold text-black shadow-[4px_4px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#000] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#000];
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  .brutal-btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border-[3px] border-black bg-brand px-4 py-2.5 text-sm font-bold text-black shadow-[4px_4px_0_0_#000] transition-all hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-[6px_6px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#000] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#000];
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  .brutal-btn-sm {
-    @apply inline-flex items-center justify-center rounded-lg border-[3px] border-black bg-white px-3 py-1.5 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_#000] disabled:cursor-not-allowed disabled:opacity-50;
+  .btn-sm {
+    @apply inline-flex items-center justify-center rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  .brutal-input {
-    @apply w-full rounded-xl border-[3px] border-black bg-white px-3 py-2 text-sm font-medium text-black placeholder:text-black/40 focus:outline-none focus:shadow-[3px_3px_0_0_#000];
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-ink/40 transition-colors focus:border-accent focus:outline-none;
   }
 
-  .brutal-badge {
-    @apply inline-flex items-center rounded-full border-2 border-black bg-white px-2.5 py-0.5 text-xs font-bold text-black;
+  .badge {
+    @apply inline-flex items-center rounded-full border border-line bg-paper px-2.5 py-0.5 text-xs font-semibold text-ink/70;
   }
 
-  .brutal-badge-brand {
-    @apply inline-flex items-center rounded-full border-2 border-black bg-brand px-2.5 py-0.5 text-xs font-bold text-black;
+  .badge-accent {
+    @apply inline-flex items-center rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent-dark;
   }
 }
