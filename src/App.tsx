@@ -13,6 +13,7 @@ import { TemplateGalleryPage } from '@/pages/TemplateGalleryPage'
 import { TemplateDetailPage } from '@/pages/TemplateDetailPage'
 import { BlogIndexPage } from '@/pages/BlogIndexPage'
 import { BlogPostPage } from '@/pages/BlogPostPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/history/:id" element={<HistoryDetailPage />} />
             <Route path="/series" element={<SeriesPage />} />
             <Route path="/series/:id" element={<SeriesDetailPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </AuthProvider>

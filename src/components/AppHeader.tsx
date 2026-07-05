@@ -51,7 +51,11 @@ export function AppHeader() {
         </Link>
       </div>
       <div className="flex items-center gap-3 text-sm">
-        {credits !== null && <span className="badge-accent">크레딧 {credits}개</span>}
+        {credits !== null && (
+          <Link to="/settings" className="badge-accent">
+            크레딧 {credits}개
+          </Link>
+        )}
         <button type="button" onClick={handleInvite} className="btn-sm">
           {inviteCopied ? '링크가 복사되었습니다!' : '친구 초대하기'}
         </button>
