@@ -422,6 +422,12 @@ export type Database = {
     Functions: {
       apply_referral: { Args: { p_referral_code: string }; Returns: Json }
       charge_credits: { Args: { p_amount: number }; Returns: Json }
+      charge_series_finalize: {
+        Args: { p_generation_id: string; p_tokens_used?: number }
+        Returns: {
+          remaining_credits: number
+        }[]
+      }
       claim_trial: { Args: { p_ip_hash: string }; Returns: Json }
       record_generation: {
         Args: {

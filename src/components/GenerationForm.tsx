@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
 import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
+import { exportStructuredDocx } from '@/lib/export'
 import { findDocTypeInfo, DEVELOPMENT_STRUCTURES, stylePresetOptions } from '@/lib/constants'
 import {
   docTypeOptions,
@@ -105,6 +106,8 @@ export function GenerationForm() {
   const [continuingFromId, setContinuingFromId] = useState<string | null>(null)
   const [seriesParts, setSeriesParts] = useState<SeriesPart[]>([])
   const [expandedPartId, setExpandedPartId] = useState<string | null>(null)
+  const [finalizing, setFinalizing] = useState(false)
+  const [finalizeError, setFinalizeError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -233,6 +236,49 @@ export function GenerationForm() {
     })
   }
 
+  // "이어서 쓰기 그만하기": 지금까지 이어쓴 파트 전체를 AI로 정리(전체 제목 + 문단 흐름에
+  // 맞는 소제목)해서 .docx로 내려받고, 이어쓰기 모드를 종료한다.
+  async function handleFinalizeSeries() {
+    if (!continuingFromId) return
+    setFinalizing(true)
+    setFinalizeError(null)
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      setFinalizeError('로그인이 필요합니다')
+      setFinalizing(false)
+      return
+    }
+
+    const res = await fetch('/api/finalize-series', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ generationId: continuingFromId }),
+    })
+
+    if (!res.ok) {
+      if (res.status === 402) {
+        setFinalizeError('크레딧이 부족합니다')
+      } else {
+        const responseBody = await res.json().catch(() => null)
+        setFinalizeError(responseBody?.error ?? `요청에 실패했습니다 (${res.status})`)
+      }
+      setFinalizing(false)
+      return
+    }
+
+    const { title, sections } = await res.json()
+    await exportStructuredDocx(title || 'geullog-series', title || '제목 없음', sections ?? [])
+    setFinalizing(false)
+    handleCancelContinuation()
+  }
+
   function handleToggleCustomLanguage() {
     setUseCustomLanguage((current) => !current)
     setValue('language', '')
@@ -275,14 +321,26 @@ export function GenerationForm() {
           <div className="flex flex-col gap-2 rounded-xl border border-line bg-paper px-4 py-2.5 text-sm text-ink/70">
             <div className="flex items-center justify-between">
               <span>이전 글에 이어서 쓰는 중이에요</span>
-              <button
-                type="button"
-                onClick={handleCancelContinuation}
-                className="text-ink/50 hover:text-ink"
-              >
-                취소
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleFinalizeSeries}
+                  disabled={finalizing}
+                  className="text-ink/50 hover:text-ink"
+                >
+                  {finalizing ? '정리하는 중...' : '이어서 쓰기 그만하기'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelContinuation}
+                  className="text-ink/50 hover:text-ink"
+                >
+                  취소
+                </button>
+              </div>
             </div>
+
+            {finalizeError && <p className="text-xs text-red-600">{finalizeError}</p>}
 
             {seriesParts.length > 0 && (
               <div className="flex flex-col gap-1 border-t border-line pt-2">

@@ -26,6 +26,31 @@ export async function exportPlainTextAsDocx(filename: string, text: string) {
   downloadBlob(blob, `${filename}.docx`)
 }
 
+// "이어서 쓰기 그만하기"로 AI가 정리한 제목+소제목 구조를 갖춘 문서 다운로드용.
+export async function exportStructuredDocx(
+  filename: string,
+  title: string,
+  sections: { subtitle: string; content: string }[],
+) {
+  const children: Paragraph[] = [
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(title)] }),
+  ]
+
+  for (const section of sections) {
+    children.push(
+      new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(section.subtitle)] }),
+    )
+    const lines = section.content.split('\n').filter((line) => line.trim().length > 0)
+    for (const line of lines) {
+      children.push(new Paragraph({ children: [new TextRun(line)] }))
+    }
+  }
+
+  const doc = new Document({ sections: [{ children }] })
+  const blob = await Packer.toBlob(doc)
+  downloadBlob(blob, `${filename}.docx`)
+}
+
 function nodeToParagraph(node: JSONContent): Paragraph {
   if (node.type === 'heading') {
     const level = node.attrs?.level ?? 1
