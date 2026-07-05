@@ -19,6 +19,7 @@ const DEMO_DEFAULTS: Omit<GenerationFormValues, 'inputText'> = {
 // /trial (functions/api/trial-generate.ts), just a lower-friction entry point.
 export function DemoHero() {
   const [topic, setTopic] = useState('')
+  const [textCopied, setTextCopied] = useState(false)
   const alreadyTried =
     typeof window !== 'undefined' && localStorage.getItem(TRIAL_USED_KEY) === 'true'
   const { output, status, error, generate } = useTrialGeneration()
@@ -27,6 +28,12 @@ export function DemoHero() {
     if (!topic.trim()) return
     await generate({ ...DEMO_DEFAULTS, inputText: topic.trim() })
     localStorage.setItem(TRIAL_USED_KEY, 'true')
+  }
+
+  async function handleCopyText() {
+    await navigator.clipboard.writeText(output)
+    setTextCopied(true)
+    setTimeout(() => setTextCopied(false), 2000)
   }
 
   return (
@@ -78,9 +85,14 @@ export function DemoHero() {
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
             {output && (
-              <div className="prose prose-sm mt-4 max-w-none rounded-xl bg-paper p-4 leading-relaxed">
-                <ReactMarkdown>{output}</ReactMarkdown>
-              </div>
+              <>
+                <div className="prose prose-sm mt-4 max-w-none rounded-xl bg-paper p-4 leading-relaxed">
+                  <ReactMarkdown>{output}</ReactMarkdown>
+                </div>
+                <button type="button" onClick={handleCopyText} className="btn-sm mt-2">
+                  {textCopied ? '복사되었습니다!' : '복사하기'}
+                </button>
+              </>
             )}
 
             {status === 'done' && (

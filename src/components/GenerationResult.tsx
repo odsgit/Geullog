@@ -42,6 +42,7 @@ export function GenerationResult({
   const [remainingCredits, setRemainingCredits] = useState<number | null>(null)
   const [isPublic, setIsPublic] = useState(initialIsPublic)
   const [shareCopied, setShareCopied] = useState(false)
+  const [textCopied, setTextCopied] = useState(false)
 
   // 재생성/톤조정/되돌리기가 만드는 버전 히스토리 — 홈 화면(생성 직후)과 히스토리 상세
   // 페이지 양쪽에서 똑같이 보이도록 이 컴포넌트가 직접 관리한다(예전엔 히스토리 상세
@@ -157,6 +158,12 @@ export function GenerationResult({
     setBusy(null)
   }
 
+  async function handleCopyText() {
+    await navigator.clipboard.writeText(editorRef.current?.getText() ?? '')
+    setTextCopied(true)
+    setTimeout(() => setTextCopied(false), 2000)
+  }
+
   function handleExportTxt() {
     exportAsTxt('geullog-generation', editorRef.current?.getText() ?? '')
   }
@@ -207,6 +214,10 @@ export function GenerationResult({
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={handleCopyText} className="btn-sm">
+          {textCopied ? '복사되었습니다!' : '복사하기'}
+        </button>
+        <div className="mx-1 h-full w-px self-stretch bg-line" />
         {(['regenerate', 'more_casual', 'more_formal'] as const).map((mode) => (
           <button
             key={mode}

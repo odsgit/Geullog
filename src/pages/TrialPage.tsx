@@ -18,6 +18,7 @@ export function TrialPage() {
   const alreadyTried =
     typeof window !== 'undefined' && localStorage.getItem(TRIAL_USED_KEY) === 'true'
   const [showSignupModal, setShowSignupModal] = useState(false)
+  const [textCopied, setTextCopied] = useState(false)
 
   const {
     register,
@@ -33,6 +34,12 @@ export function TrialPage() {
     await generate(values)
     localStorage.setItem(TRIAL_USED_KEY, 'true')
     setShowSignupModal(true)
+  }
+
+  async function handleCopyText() {
+    await navigator.clipboard.writeText(output)
+    setTextCopied(true)
+    setTimeout(() => setTextCopied(false), 2000)
   }
 
   return (
@@ -100,9 +107,14 @@ export function TrialPage() {
           <div className="card p-8">
             {error && <p className="text-sm text-red-600">{error}</p>}
             {output && (
-              <div className="prose prose-sm max-w-none leading-relaxed">
-                <ReactMarkdown>{output}</ReactMarkdown>
-              </div>
+              <>
+                <div className="prose prose-sm max-w-none leading-relaxed">
+                  <ReactMarkdown>{output}</ReactMarkdown>
+                </div>
+                <button type="button" onClick={handleCopyText} className="btn-sm mt-4">
+                  {textCopied ? '복사되었습니다!' : '복사하기'}
+                </button>
+              </>
             )}
           </div>
         )}
