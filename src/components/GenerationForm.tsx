@@ -108,6 +108,35 @@ export function GenerationForm() {
   const [expandedPartId, setExpandedPartId] = useState<string | null>(null)
   const [finalizing, setFinalizing] = useState(false)
   const [finalizeError, setFinalizeError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+
+  async function loadSuggestions(seedGenerationId: string) {
+    setSuggestionsLoading(true)
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      setSuggestionsLoading(false)
+      return
+    }
+
+    const res = await fetch('/api/suggest-continuation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ generationId: seedGenerationId }),
+    })
+
+    setSuggestionsLoading(false)
+    if (!res.ok) return
+
+    const { suggestions: nextSuggestions } = await res.json()
+    setSuggestions(nextSuggestions ?? [])
+  }
 
   useEffect(() => {
     supabase
@@ -205,6 +234,7 @@ export function GenerationForm() {
           setUseCustomLanguage(language !== 'ko' && language !== 'en')
           setContinuingFromId(continueId)
           loadSeriesParts(continueId).then(setSeriesParts)
+          loadSuggestions(continueId)
         }
         localStorage.removeItem(CONTINUE_STORAGE_KEY)
       })
@@ -220,6 +250,7 @@ export function GenerationForm() {
       setValue('continueFromGenerationId', generationId)
       setValue('inputText', '')
       loadSeriesParts(generationId).then(setSeriesParts)
+      loadSuggestions(generationId)
     }
   }, [status, generationId, continuingFromId, setValue])
 
@@ -227,6 +258,7 @@ export function GenerationForm() {
     setContinuingFromId(null)
     setSeriesParts([])
     setExpandedPartId(null)
+    setSuggestions([])
     setUseCustomLanguage(false)
     reset({
       inputText: '',
@@ -381,6 +413,26 @@ export function GenerationForm() {
           error={errors.inputText?.message}
           {...register('inputText')}
         />
+
+        {continuingFromId && (suggestionsLoading || suggestions.length > 0) && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-ink/50">
+              {suggestionsLoading ? '다음 내용을 추천하고 있어요...' : '이런 방향은 어떨까요?'}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setValue('inputText', suggestion)}
+                  className="badge text-left hover:bg-paper"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
