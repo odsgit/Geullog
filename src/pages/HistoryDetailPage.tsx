@@ -1,79 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { AppHeader } from '@/components/AppHeader'
 import { GenerationResult } from '@/components/GenerationResult'
-import { VersionTimeline } from '@/components/VersionTimeline'
-import { trackEvent } from '@/lib/analytics'
 import type { Database } from '@/types/supabase'
 
 type Generation = Database['public']['Tables']['generations']['Row']
-type GenerationVersion = Database['public']['Tables']['generation_versions']['Row']
 
 export function HistoryDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [generation, setGeneration] = useState<Generation | null>(null)
-  const [versions, setVersions] = useState<GenerationVersion[]>([])
   const [initialText, setInitialText] = useState<string | null>(null)
   const [seriesInfo, setSeriesInfo] = useState<{ id: string; partNumber: number | null } | null>(
     null,
   )
   const [error, setError] = useState<string | null>(null)
-  const [revertingId, setRevertingId] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    if (!id) return
-
-    const [{ data: gen, error: generationError }, { data: versionRows }] = await Promise.all([
-      supabase.from('generations').select('*').eq('id', id).single(),
-      supabase
-        .from('generation_versions')
-        .select('*')
-        .eq('generation_id', id)
-        .order('version_number', { ascending: false }),
-    ])
-
-    if (generationError || !gen) {
-      setError('생성 기록을 찾을 수 없습니다')
-      return
-    }
-
-    const allVersions = versionRows ?? []
-    const current = gen.current_version_id
-      ? allVersions.find((version) => version.id === gen.current_version_id)
-      : allVersions[0]
-
-    setGeneration(gen)
-    setVersions(allVersions)
-    setInitialText(current?.output_text ?? gen.output_text ?? '')
-    if (gen.series_id) {
-      setSeriesInfo({ id: gen.series_id, partNumber: gen.part_number })
-    }
-  }, [id])
 
   useEffect(() => {
-    load()
-  }, [load])
-
-  async function handleRevert(versionId: string) {
     if (!id) return
-    setRevertingId(versionId)
 
-    const { error: revertError } = await supabase.rpc('revert_generation_version', {
-      p_generation_id: id,
-      p_version_id: versionId,
-    })
+    async function load() {
+      const [{ data: gen, error: generationError }, { data: currentVersion }] = await Promise.all([
+        supabase.from('generations').select('*').eq('id', id!).single(),
+        supabase
+          .from('generation_versions')
+          .select('output_text')
+          .eq('generation_id', id!)
+          .order('version_number', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
 
-    setRevertingId(null)
+      if (generationError || !gen) {
+        setError('생성 기록을 찾을 수 없습니다')
+        return
+      }
 
-    if (revertError) {
-      setError('되돌리기에 실패했습니다')
-      return
+      setGeneration(gen)
+      setInitialText(currentVersion?.output_text ?? gen.output_text ?? '')
+      if (gen.series_id) {
+        setSeriesInfo({ id: gen.series_id, partNumber: gen.part_number })
+      }
     }
 
-    trackEvent('version_reverted', { generation_id: id, from_version_id: versionId })
-    await load()
-  }
+    load()
+  }, [id])
 
   return (
     <div className="min-h-svh bg-paper">
@@ -98,21 +69,13 @@ export function HistoryDetailPage() {
         {initialText !== null && id && generation && (
           <div className="card p-8">
             <GenerationResult
-              key={generation.current_version_id ?? id}
+              key={id}
               generationId={id}
               initialText={initialText}
               initialIsPublic={generation.is_public}
-              onVersionCreated={load}
             />
           </div>
         )}
-
-        <VersionTimeline
-          versions={versions}
-          currentVersionId={generation?.current_version_id ?? null}
-          onRevert={handleRevert}
-          revertingId={revertingId}
-        />
       </main>
     </div>
   )

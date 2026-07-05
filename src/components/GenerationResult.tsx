@@ -1,9 +1,13 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { RichTextEditor, type RichTextEditorHandle } from '@/components/RichTextEditor'
+import { VersionTimeline } from '@/components/VersionTimeline'
 import { exportAsTxt, exportAsDocx } from '@/lib/export'
 import { trackEvent } from '@/lib/analytics'
 import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
+import type { Database } from '@/types/supabase'
+
+type GenerationVersion = Database['public']['Tables']['generation_versions']['Row']
 
 type ActionMode = 'regenerate' | 'more_casual' | 'more_formal'
 
@@ -19,8 +23,6 @@ interface GenerationResultProps {
   generationId: string
   initialText: string
   initialIsPublic?: boolean
-  /** 재생성/톤조정으로 새 generation_versions row가 생겼을 때 호출됨(버전 타임라인 갱신용). */
-  onVersionCreated?: () => void
 }
 
 const actionLabels: Record<ActionMode, string> = {
@@ -33,7 +35,6 @@ export function GenerationResult({
   generationId,
   initialText,
   initialIsPublic = false,
-  onVersionCreated,
 }: GenerationResultProps) {
   const editorRef = useRef<RichTextEditorHandle>(null)
   const [busy, setBusy] = useState<ActionMode | null>(null)
@@ -41,6 +42,54 @@ export function GenerationResult({
   const [remainingCredits, setRemainingCredits] = useState<number | null>(null)
   const [isPublic, setIsPublic] = useState(initialIsPublic)
   const [shareCopied, setShareCopied] = useState(false)
+
+  // 재생성/톤조정/되돌리기가 만드는 버전 히스토리 — 홈 화면(생성 직후)과 히스토리 상세
+  // 페이지 양쪽에서 똑같이 보이도록 이 컴포넌트가 직접 관리한다(예전엔 히스토리 상세
+  // 페이지에만 있어서 방금 생성한 결과에서는 되돌리기를 쓸 수 없었음).
+  const [versions, setVersions] = useState<GenerationVersion[]>([])
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
+  const [revertingId, setRevertingId] = useState<string | null>(null)
+
+  const loadVersions = useCallback(async () => {
+    const [{ data: versionRows }, { data: generation }] = await Promise.all([
+      supabase
+        .from('generation_versions')
+        .select('*')
+        .eq('generation_id', generationId)
+        .order('version_number', { ascending: false }),
+      supabase.from('generations').select('current_version_id').eq('id', generationId).single(),
+    ])
+
+    setVersions(versionRows ?? [])
+    setCurrentVersionId(generation?.current_version_id ?? versionRows?.[0]?.id ?? null)
+  }, [generationId])
+
+  useEffect(() => {
+    loadVersions()
+  }, [loadVersions])
+
+  async function handleRevert(versionId: string) {
+    setRevertingId(versionId)
+
+    const { data, error: revertError } = await supabase.rpc('revert_generation_version', {
+      p_generation_id: generationId,
+      p_version_id: versionId,
+    })
+
+    setRevertingId(null)
+
+    if (revertError) {
+      setError('되돌리기에 실패했습니다')
+      return
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+    if (result?.output_text) {
+      editorRef.current?.setContent(result.output_text)
+    }
+    trackEvent('version_reverted', { generation_id: generationId, from_version_id: versionId })
+    await loadVersions()
+  }
 
   async function runAction(mode: ActionMode) {
     setBusy(mode)
@@ -103,7 +152,7 @@ export function GenerationResult({
 
     if (fullText) {
       editorRef.current?.setContent(fullText)
-      onVersionCreated?.()
+      await loadVersions()
     }
     setBusy(null)
   }
@@ -194,6 +243,13 @@ export function GenerationResult({
       {remainingCredits !== null && (
         <p className="text-xs text-ink/50">남은 크레딧: {remainingCredits}</p>
       )}
+
+      <VersionTimeline
+        versions={versions}
+        currentVersionId={currentVersionId}
+        onRevert={handleRevert}
+        revertingId={revertingId}
+      />
     </div>
   )
 }
