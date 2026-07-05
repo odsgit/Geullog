@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
 import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
-import { DOC_TYPE_CATEGORY, DEVELOPMENT_STRUCTURES, stylePresetOptions } from '@/lib/constants'
+import { findDocTypeInfo, DEVELOPMENT_STRUCTURES, stylePresetOptions } from '@/lib/constants'
 import {
   docTypeOptions,
   styleOptions,
@@ -30,6 +30,12 @@ interface AuthorStyleOption {
   nationality: string | null
   representative_works: string | null
   tier: string
+  style_keywords: string | null
+  emotional_tone: string | null
+  main_pov: string | null
+  literary_traits: string | null
+  representative_sentence: string | null
+  target_genre: string | null
 }
 
 interface SeriesPart {
@@ -103,13 +109,16 @@ export function GenerationForm() {
   useEffect(() => {
     supabase
       .from('author_styles')
-      .select('id, name, nationality, representative_works, tier')
+      .select(
+        'id, name, nationality, representative_works, tier, style_keywords, emotional_tone, main_pov, literary_traits, representative_sentence, target_genre',
+      )
       .order('name')
       .then(({ data }) => setAuthorStyles(data ?? []))
   }, [])
 
   const docType = watch('docType')
-  const docCategory = docType ? DOC_TYPE_CATEGORY[docType] : undefined
+  const docTypeInfo = docType ? findDocTypeInfo(docType) : undefined
+  const isLongForm = docTypeInfo?.longForm ?? false
   const selectedAuthorStyleId = watch('authorStyleId')
   const selectedAuthorStyle = authorStyles.find((style) => style.id === selectedAuthorStyleId)
   const developmentStructureKey = watch('developmentStructure')
@@ -118,16 +127,16 @@ export function GenerationForm() {
   )
   const imageUrls = watch('inputImageUrls')
 
-  // author_style과 style_preset은 doc_type 카테고리에 따라 서로 배타적으로 노출되므로,
-  // 카테고리가 바뀌면 반대쪽 필드는 즉시 비워서 숨겨진 값이 실수로 제출되지 않게 한다.
+  // author_style과 style_preset은 장문 문학 유형(수필/소설/희곡/시나리오/기행문) 여부에
+  // 따라 서로 배타적으로 노출되므로, 전환되면 반대쪽 필드는 즉시 비워서 숨겨진 값이
+  // 실수로 제출되지 않게 한다.
   useEffect(() => {
-    if (!docCategory) return
-    if (docCategory === 'practical') {
-      setValue('authorStyleId', undefined)
-    } else {
+    if (isLongForm) {
       setValue('stylePreset', undefined)
+    } else {
+      setValue('authorStyleId', undefined)
     }
-  }, [docCategory, setValue])
+  }, [isLongForm, setValue])
 
   useEffect(() => {
     const templateId = localStorage.getItem(TEMPLATE_STORAGE_KEY)
@@ -316,12 +325,14 @@ export function GenerationForm() {
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            label="글 종류"
-            options={[...docTypeOptions]}
-            error={errors.docType?.message}
-            {...register('docType')}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Select
+              label="글 종류"
+              options={[...docTypeOptions]}
+              error={errors.docType?.message}
+              {...register('docType')}
+            />
+          </div>
           <Select
             label="타겟 독자"
             options={[...targetAudienceOptions]}
@@ -329,6 +340,19 @@ export function GenerationForm() {
             {...register('targetAudience')}
           />
         </div>
+
+        {docTypeInfo && (
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl border border-line bg-paper px-4 py-3 text-xs text-ink/70">
+            <dt className="font-semibold text-ink/50">목적</dt>
+            <dd>{docTypeInfo.purpose}</dd>
+            <dt className="font-semibold text-ink/50">주요 특징</dt>
+            <dd>{docTypeInfo.features}</dd>
+            <dt className="font-semibold text-ink/50">대표 전개 방식</dt>
+            <dd>{docTypeInfo.developmentStyle}</dd>
+            <dt className="font-semibold text-ink/50">대표 예시</dt>
+            <dd>{docTypeInfo.examples}</dd>
+          </dl>
+        )}
 
         <TextArea
           label="AI에게 추가 요청 (선택)"
@@ -386,7 +410,7 @@ export function GenerationForm() {
               )}
             </div>
 
-            {docCategory === 'creative' && (
+            {isLongForm && (
               <div className="flex flex-col gap-1.5">
                 <Select
                   label="작가 스타일 (선택)"
@@ -408,10 +432,52 @@ export function GenerationForm() {
                     이 작가는 데이터가 적어 문체 재현 정확도가 낮을 수 있습니다
                   </p>
                 )}
+                {selectedAuthorStyle && (
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl border border-line bg-white px-4 py-3 text-xs text-ink/70">
+                    {selectedAuthorStyle.style_keywords && (
+                      <>
+                        <dt className="font-semibold text-ink/50">문체 핵심 키워드</dt>
+                        <dd>{selectedAuthorStyle.style_keywords}</dd>
+                      </>
+                    )}
+                    {selectedAuthorStyle.emotional_tone && (
+                      <>
+                        <dt className="font-semibold text-ink/50">감성 톤</dt>
+                        <dd>{selectedAuthorStyle.emotional_tone}</dd>
+                      </>
+                    )}
+                    {selectedAuthorStyle.main_pov && (
+                      <>
+                        <dt className="font-semibold text-ink/50">주요 시점</dt>
+                        <dd>{selectedAuthorStyle.main_pov}</dd>
+                      </>
+                    )}
+                    {selectedAuthorStyle.literary_traits && (
+                      <>
+                        <dt className="font-semibold text-ink/50">문학적 특징</dt>
+                        <dd className="col-span-2">{selectedAuthorStyle.literary_traits}</dd>
+                      </>
+                    )}
+                    {selectedAuthorStyle.representative_sentence && (
+                      <>
+                        <dt className="font-semibold text-ink/50">대표 문장</dt>
+                        <dd className="col-span-2 whitespace-pre-line">
+                          {selectedAuthorStyle.representative_sentence}
+                        </dd>
+                      </>
+                    )}
+                    {selectedAuthorStyle.target_genre && (
+                      <>
+                        <dt className="font-semibold text-ink/50">주요 대상 장르</dt>
+                        <dd>{selectedAuthorStyle.target_genre}</dd>
+                      </>
+                    )}
+                  </dl>
+                )}
               </div>
             )}
 
-            {docCategory === 'practical' && (
+            {!isLongForm && (
               <Select
                 label="문체 프리셋 (선택)"
                 placeholder="선택 안 함"

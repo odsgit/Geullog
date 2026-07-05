@@ -6,7 +6,7 @@ import { TRIAL_USED_KEY } from '@/lib/trialStorage'
 import type { GenerationFormValues } from '@/lib/generationSchema'
 
 const DEMO_DEFAULTS: Omit<GenerationFormValues, 'inputText'> = {
-  docType: 'sns',
+  docType: 'blog',
   tone: 'friendly',
   targetAudience: 'general',
   length: 'short',

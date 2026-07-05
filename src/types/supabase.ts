@@ -43,33 +43,51 @@ export type Database = {
         Row: {
           active_years: string | null
           created_at: string
+          emotional_tone: string | null
           id: string
+          literary_traits: string | null
+          main_pov: string | null
           name: string
           nationality: string | null
+          representative_sentence: string | null
           representative_works: string | null
           style_description: string
+          style_keywords: string | null
+          target_genre: string | null
           tier: string
           traits: string[] | null
         }
         Insert: {
           active_years?: string | null
           created_at?: string
+          emotional_tone?: string | null
           id?: string
+          literary_traits?: string | null
+          main_pov?: string | null
           name: string
           nationality?: string | null
+          representative_sentence?: string | null
           representative_works?: string | null
           style_description: string
+          style_keywords?: string | null
+          target_genre?: string | null
           tier?: string
           traits?: string[] | null
         }
         Update: {
           active_years?: string | null
           created_at?: string
+          emotional_tone?: string | null
           id?: string
+          literary_traits?: string | null
+          main_pov?: string | null
           name?: string
           nationality?: string | null
+          representative_sentence?: string | null
           representative_works?: string | null
           style_description?: string
+          style_keywords?: string | null
+          target_genre?: string | null
           tier?: string
           traits?: string[] | null
         }

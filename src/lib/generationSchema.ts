@@ -1,14 +1,12 @@
 import { z } from 'zod'
-import { DOC_TYPE_CATEGORY } from './constants'
+import { DOC_TYPE_INFO, findDocTypeInfo } from './constants'
 
-export const docTypeOptions = [
-  { value: 'blog', label: '블로그 포스트' },
-  { value: 'product', label: '상품 설명' },
-  { value: 'sns', label: 'SNS 캡션' },
-  { value: 'email', label: '이메일' },
-  { value: 'resume', label: '자기소개서' },
-  { value: 'press', label: '보도자료' },
-] as const
+// 글 종류 select 옵션은 constants.ts의 DOC_TYPE_INFO(목적/특징/전개방식/예시가 함께 있는
+// 표)에서 파생시킨다 — 단일 출처 유지.
+export const docTypeOptions = DOC_TYPE_INFO.map((info) => ({
+  value: info.value,
+  label: info.label,
+}))
 
 // 정보전달형/스토리텔링형은 (제거된) 서술 유형의 설명/서사와 개념이 중복돼 제거함.
 // development_structure(전개 방식)가 그 역할을 대신한다.
@@ -83,20 +81,20 @@ const baseGenerationFormSchema = z.object({
 })
 
 export const generationFormSchema = baseGenerationFormSchema.superRefine((data, ctx) => {
-  const category = DOC_TYPE_CATEGORY[data.docType]
+  const isLongForm = findDocTypeInfo(data.docType)?.longForm ?? false
 
-  if (category === 'practical' && data.authorStyleId) {
+  if (!isLongForm && data.authorStyleId) {
     ctx.addIssue({
       code: 'custom',
       path: ['authorStyleId'],
-      message: '실용형 글 종류에는 작가 스타일을 적용할 수 없습니다',
+      message: '이 글 종류에는 작가 스타일을 적용할 수 없습니다',
     })
   }
-  if (category === 'creative' && data.stylePreset) {
+  if (isLongForm && data.stylePreset) {
     ctx.addIssue({
       code: 'custom',
       path: ['stylePreset'],
-      message: '창작형 글 종류에는 문체 프리셋을 적용할 수 없습니다',
+      message: '이 글 종류에는 문체 프리셋을 적용할 수 없습니다',
     })
   }
 

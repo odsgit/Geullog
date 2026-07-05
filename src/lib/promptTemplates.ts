@@ -1,13 +1,12 @@
 import type { GenerationFormValues } from './generationSchema'
-import { findDevelopmentStructure, type DevelopmentStructure } from './constants'
+import { findDevelopmentStructure, findDocTypeInfo, type DevelopmentStructure } from './constants'
 
-const docTypeInstructions: Record<string, string> = {
-  blog: '블로그 포스트 형식으로, 도입-본론-결론 구조를 갖춰 작성하세요.',
-  product: '온라인 쇼핑몰에 게시할 상품 설명으로, 특징과 장점을 매력적으로 전달하세요.',
-  sns: 'SNS(인스타그램/트위터 등)에 게시할 짧고 임팩트 있는 캡션으로 작성하세요.',
-  email: '이메일 본문으로, 인사말과 맺음말을 포함해 작성하세요.',
-  resume: '자기소개서 항목으로, 구체적인 경험과 성과를 중심으로 작성하세요.',
-  press: '보도자료 형식으로, 핵심 정보를 육하원칙에 따라 명확하게 전달하세요.',
+// DOC_TYPE_INFO(글 종류별 목적/특징/전개방식 표)에서 지시문을 직접 만들어낸다 — 글 종류
+// 20종 각각에 지시문을 따로 하드코딩하지 않고 단일 출처(constants.ts)에서 파생시킨다(DRY).
+function docTypeInstruction(docType: string): string | null {
+  const info = findDocTypeInfo(docType)
+  if (!info) return null
+  return `${info.label} 형식으로 작성하세요. 목적은 "${info.purpose}"이며, ${info.features}이 드러나야 합니다.`
 }
 
 const styleInstructions: Record<string, string> = {
@@ -110,7 +109,7 @@ export function buildPrompt(
 
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
-    docTypeInstructions[input.docType],
+    docTypeInstruction(input.docType),
     input.style ? styleInstructions[input.style] : null,
     input.tone ? toneInstructions[input.tone] : null,
     input.stylePreset ? stylePresetInstructions[input.stylePreset] : null,
