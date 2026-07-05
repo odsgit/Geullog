@@ -7,13 +7,11 @@ import type { GenerationFormValues } from '@/lib/generationSchema'
 
 const DEMO_DEFAULTS: Omit<GenerationFormValues, 'inputText'> = {
   docType: 'sns',
-  style: 'listicle',
   tone: 'friendly',
   targetAudience: 'general',
   length: 'short',
   language: 'ko',
   inputImageUrls: [],
-  developmentStructure: 'three_part',
 }
 
 // Landing-page hero that lets an anonymous visitor see AI writing happen

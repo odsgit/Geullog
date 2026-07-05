@@ -49,9 +49,11 @@ const languageInstructions: Record<string, string> = {
 }
 
 // Falls back to a generic instruction for any language the user typed in
-// themselves beyond the ko/en quick picks (e.g. "프랑스어", "베트남어").
-function languageInstruction(language: string): string {
-  return languageInstructions[language] ?? `${language}로 작성하세요.`
+// themselves beyond the ko/en quick picks (e.g. "프랑스어", "베트남어"). 언어를
+// 아예 지정하지 않으면 한국어로 기본 작성한다.
+function languageInstruction(language?: string): string {
+  const resolved = language || 'ko'
+  return languageInstructions[resolved] ?? `${resolved}로 작성하세요.`
 }
 
 // 마크다운을 강제하는 실용형 구조(아래 developmentStructureInstruction)와 충돌하므로
@@ -62,11 +64,12 @@ export const NO_MARKDOWN_INSTRUCTION =
 
 // 전개방식별 구조 강제 지시. 실용형(소제목/불릿 예시 few-shot 포함)과 문학형(빈 줄
 // 문단 구분만, 소제목 강제 금지)을 분기한다 — 문학형에 소제목을 강제하면 톤이 깨진다.
-function developmentStructureInstruction(structure: DevelopmentStructure): string {
+// forcePlain(출력 형식='일반 텍스트')이면 실용형이라도 소제목을 강제하지 않는다.
+function developmentStructureInstruction(structure: DevelopmentStructure, forcePlain: boolean): string {
   const stepsList = structure.structureSteps.join(' → ')
   const common = `당신은 유저가 선택한 [${structure.label}] 전개 방식(${stepsList})에 맞춰 글을 작성해야 합니다. 독자가 글의 구조를 직관적으로 파악할 수 있도록 반드시 문단을 명확히 분리하십시오. 각 단계가 바뀔 때마다 줄 바꿈을 2번(빈 줄 하나)하여 단락을 확실히 구분하세요.`
 
-  if (structure.practical) {
+  if (structure.practical && !forcePlain) {
     const fewShot = structure.structureSteps.map((step) => `## ${step}\n(내용)`).join('\n\n')
     return `${common} 각 단계마다 소제목(##)이나 필요하면 불릿(-)을 적극 활용해 다음과 같은 형식을 따르세요:\n${fewShot}`
   }
@@ -96,19 +99,29 @@ export function buildPrompt(
   authorStyle?: AuthorStyleInfo | null,
   continuationContext?: string | null,
 ) {
-  const structure = findDevelopmentStructure(input.developmentStructure)
+  const structure = input.developmentStructure
+    ? findDevelopmentStructure(input.developmentStructure)
+    : undefined
+  const isPlainFormat = input.outputFormat === 'plain'
+  const seoKeywords = input.seoKeywords
+    ?.split(',')
+    .map((keyword) => keyword.trim())
+    .filter(Boolean)
 
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
     docTypeInstructions[input.docType],
-    styleInstructions[input.style],
-    toneInstructions[input.tone],
+    input.style ? styleInstructions[input.style] : null,
+    input.tone ? toneInstructions[input.tone] : null,
     input.stylePreset ? stylePresetInstructions[input.stylePreset] : null,
     targetAudienceInstructions[input.targetAudience],
-    lengthInstructions[input.length],
+    input.length ? lengthInstructions[input.length] : null,
     languageInstruction(input.language),
-    structure ? developmentStructureInstruction(structure) : null,
+    structure ? developmentStructureInstruction(structure, isPlainFormat) : null,
+    isPlainFormat ? NO_MARKDOWN_INSTRUCTION : null,
     authorStyle ? authorStyleInstruction(authorStyle) : null,
+    seoKeywords?.length ? `다음 SEO 키워드를 문맥에 자연스럽게 포함하세요: ${seoKeywords.join(', ')}` : null,
+    input.additionalInstruction ? `추가 요청사항: ${input.additionalInstruction}` : null,
     continuationContext
       ? '이것은 여러 부분으로 이어지는 긴 글의 다음 부분입니다. 이전 내용의 문체, 등장인물, 설정과의 일관성을 유지하며 자연스럽게 이어서 작성하세요.'
       : null,

@@ -8,15 +8,10 @@ import { TextArea } from '@/components/TextArea'
 import { useTrialGeneration } from '@/hooks/useTrialGeneration'
 import {
   docTypeOptions,
-  styleOptions,
-  toneOptions,
   targetAudienceOptions,
-  lengthOptions,
-  languageOptions,
   generationFormSchema,
   type GenerationFormValues,
 } from '@/lib/generationSchema'
-import { DEVELOPMENT_STRUCTURES } from '@/lib/constants'
 import { TRIAL_USED_KEY } from '@/lib/trialStorage'
 
 export function TrialPage() {
@@ -72,16 +67,6 @@ export function TrialPage() {
               {...register('inputText')}
             />
 
-            <Select
-              label="전개 방식"
-              options={DEVELOPMENT_STRUCTURES.map((structure) => ({
-                value: structure.key,
-                label: structure.label,
-              }))}
-              error={errors.developmentStructure?.message}
-              {...register('developmentStructure')}
-            />
-
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Select
                 label="글 종류"
@@ -90,36 +75,20 @@ export function TrialPage() {
                 {...register('docType')}
               />
               <Select
-                label="스타일"
-                options={[...styleOptions]}
-                error={errors.style?.message}
-                {...register('style')}
-              />
-              <Select
-                label="톤"
-                options={[...toneOptions]}
-                error={errors.tone?.message}
-                {...register('tone')}
-              />
-              <Select
                 label="타겟 독자"
                 options={[...targetAudienceOptions]}
                 error={errors.targetAudience?.message}
                 {...register('targetAudience')}
               />
-              <Select
-                label="분량"
-                options={[...lengthOptions]}
-                error={errors.length?.message}
-                {...register('length')}
-              />
-              <Select
-                label="언어"
-                options={[...languageOptions]}
-                error={errors.language?.message}
-                {...register('language')}
-              />
             </div>
+
+            <TextArea
+              label="AI에게 추가 요청 (선택)"
+              placeholder="예: 반말로 작성해줘 / SEO를 고려해줘"
+              rows={2}
+              error={errors.additionalInstruction?.message}
+              {...register('additionalInstruction')}
+            />
 
             <button type="submit" disabled={status === 'streaming'} className="btn-primary">
               {status === 'streaming' ? '생성 중...' : '무료로 체험 생성하기'}

@@ -78,17 +78,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           const formValues: GenerationFormValues = {
             inputText: generation.input_text ?? '',
             docType: generation.doc_type,
-            style: generation.style ?? '',
-            tone: generation.tone ?? '',
+            style: generation.style ?? undefined,
+            tone: generation.tone ?? undefined,
             targetAudience: generation.target_audience ?? '',
-            length: generation.length ?? '',
+            length: generation.length ?? undefined,
             language: generation.language ?? 'ko',
             inputImageUrls: Array.isArray(generation.input_image_urls)
               ? (generation.input_image_urls as string[])
               : [],
-            developmentStructure: generation.development_structure ?? '',
+            developmentStructure: generation.development_structure ?? undefined,
             stylePreset: generation.style_preset ?? undefined,
             imageMode: generation.image_mode ?? undefined,
+            additionalInstruction: generation.additional_instruction ?? undefined,
+            seoKeywords: generation.seo_keywords?.length ? generation.seo_keywords.join(', ') : undefined,
+            outputFormat: generation.output_format ?? undefined,
           }
 
           let imageDescription: string | null = null

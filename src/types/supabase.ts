@@ -141,6 +141,7 @@ export type Database = {
       }
       generations: {
         Row: {
+          additional_instruction: string | null
           author_style_id: string | null
           created_at: string
           current_version_id: string | null
@@ -153,8 +154,10 @@ export type Database = {
           is_public: boolean
           language: string | null
           length: string | null
+          output_format: string | null
           output_text: string | null
           part_number: number | null
+          seo_keywords: string[] | null
           series_id: string | null
           style: string | null
           style_preset: string | null
@@ -164,6 +167,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          additional_instruction?: string | null
           author_style_id?: string | null
           created_at?: string
           current_version_id?: string | null
@@ -176,8 +180,10 @@ export type Database = {
           is_public?: boolean
           language?: string | null
           length?: string | null
+          output_format?: string | null
           output_text?: string | null
           part_number?: number | null
+          seo_keywords?: string[] | null
           series_id?: string | null
           style?: string | null
           style_preset?: string | null
@@ -187,6 +193,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          additional_instruction?: string | null
           author_style_id?: string | null
           created_at?: string
           current_version_id?: string | null
@@ -199,8 +206,10 @@ export type Database = {
           is_public?: boolean
           language?: string | null
           length?: string | null
+          output_format?: string | null
           output_text?: string | null
           part_number?: number | null
+          seo_keywords?: string[] | null
           series_id?: string | null
           style?: string | null
           style_preset?: string | null
@@ -398,22 +407,25 @@ export type Database = {
       claim_trial: { Args: { p_ip_hash: string }; Returns: Json }
       record_generation: {
         Args: {
+          p_additional_instruction?: string
           p_author_style_id?: string
-          p_development_structure: string
+          p_development_structure?: string
           p_doc_type: string
           p_image_mode?: string
           p_input_image_urls: Json
           p_input_text: string
-          p_language: string
-          p_length: string
+          p_language?: string
+          p_length?: string
+          p_output_format?: string
           p_output_text: string
           p_part_number?: number
+          p_seo_keywords?: string[]
           p_series_id?: string
-          p_style: string
+          p_style?: string
           p_style_preset?: string
           p_target_audience: string
           p_tokens_used: number
-          p_tone: string
+          p_tone?: string
         }
         Returns: {
           generation_id: string

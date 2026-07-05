@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DOC_TYPE_CATEGORY, DEVELOPMENT_STRUCTURES, stylePresetOptions } from './constants'
+import { DOC_TYPE_CATEGORY } from './constants'
 
 export const docTypeOptions = [
   { value: 'blog', label: '블로그 포스트' },
@@ -45,31 +45,40 @@ export const languageOptions = [
   { value: 'en', label: 'English' },
 ] as const
 
+export const outputFormatOptions = [
+  { value: 'markdown', label: '마크다운 (소제목/목록 구조화)' },
+  { value: 'plain', label: '일반 텍스트' },
+] as const
+
 function valuesOf<T extends { value: string }>(options: readonly T[]) {
   return options.map((option) => option.value) as [string, ...string[]]
 }
 
-const developmentStructureKeys = DEVELOPMENT_STRUCTURES.map((structure) => structure.key) as [
-  string,
-  ...string[],
-]
-const stylePresetKeys = valuesOf(stylePresetOptions)
-
 const baseGenerationFormSchema = z.object({
+  // 필수 4개 — 이것만 채워도 바로 생성 가능해야 한다.
   inputText: z.string().trim().min(1, '주제나 키워드를 입력해주세요'),
   docType: z.enum(valuesOf(docTypeOptions), { message: '글 종류를 선택해주세요' }),
-  style: z.enum(valuesOf(styleOptions), { message: '스타일을 선택해주세요' }),
-  tone: z.enum(valuesOf(toneOptions), { message: '톤을 선택해주세요' }),
   targetAudience: z.enum(valuesOf(targetAudienceOptions), {
     message: '타겟 독자를 선택해주세요',
   }),
-  length: z.enum(valuesOf(lengthOptions), { message: '분량을 선택해주세요' }),
-  language: z.string().trim().min(1, '언어를 선택해주세요'),
+  additionalInstruction: z.string().trim().optional(),
+
+  // 나머지는 전부 선택(고급 설정) — plain string으로 느슨하게 받아서, <select>의
+  // "선택 안 함"(빈 문자열)이 그대로 optional 미지정으로 취급되게 한다(빈 문자열은 JS에서
+  // falsy라 프롬프트 조합 시 자연스럽게 걸러짐). z.enum을 쓰지 않는 이유는 z.preprocess로
+  // 빈 문자열→undefined 변환을 시도하면 react-hook-form의 zodResolver 타입 추론이 깨지기
+  // 때문(입력 타입이 unknown으로 넓어짐).
+  style: z.string().optional(),
+  tone: z.string().optional(),
+  length: z.string().optional(),
+  language: z.string().trim().optional(),
   inputImageUrls: z.array(z.string()),
-  developmentStructure: z.enum(developmentStructureKeys, { message: '전개 방식을 선택해주세요' }),
+  developmentStructure: z.string().optional(),
   authorStyleId: z.string().optional(),
-  stylePreset: z.enum(stylePresetKeys).optional(),
+  stylePreset: z.string().optional(),
   imageMode: z.enum(['ocr', 'describe']).optional(),
+  seoKeywords: z.string().trim().optional(),
+  outputFormat: z.string().optional(),
   continueFromGenerationId: z.string().optional(),
 })
 

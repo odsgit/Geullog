@@ -204,23 +204,33 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
         logStructureIntegrity(fullText)
 
+        const seoKeywordsArray = input.seoKeywords
+          ? input.seoKeywords
+              .split(',')
+              .map((keyword) => keyword.trim())
+              .filter(Boolean)
+          : null
+
         const { data: recorded, error: recordError } = await supabase.rpc('record_generation', {
           p_input_text: input.inputText,
           p_input_image_urls: input.inputImageUrls,
           p_doc_type: input.docType,
-          p_style: input.style,
-          p_tone: input.tone,
           p_target_audience: input.targetAudience,
-          p_length: input.length,
-          p_language: input.language,
           p_output_text: fullText,
           p_tokens_used: tokensUsed,
-          p_development_structure: input.developmentStructure,
+          p_style: input.style || null,
+          p_tone: input.tone || null,
+          p_length: input.length || null,
+          p_language: input.language || null,
+          p_development_structure: input.developmentStructure || null,
           p_author_style_id: input.authorStyleId || null,
           p_style_preset: input.stylePreset || null,
           p_series_id: seriesId,
           p_part_number: partNumber,
           p_image_mode: input.imageMode || null,
+          p_additional_instruction: input.additionalInstruction || null,
+          p_seo_keywords: seoKeywordsArray,
+          p_output_format: input.outputFormat || null,
         })
 
         if (recordError) {

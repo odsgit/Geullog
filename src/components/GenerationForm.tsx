@@ -19,6 +19,7 @@ import {
   targetAudienceOptions,
   lengthOptions,
   languageOptions,
+  outputFormatOptions,
   generationFormSchema,
   type GenerationFormValues,
 } from '@/lib/generationSchema'
@@ -88,6 +89,7 @@ export function GenerationForm() {
     defaultValues: { inputImageUrls: [] },
   })
   const [useCustomLanguage, setUseCustomLanguage] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const { output, status, error, remainingCredits, generationId, generate } = useGeneration()
 
   const [showTemplateTitleInput, setShowTemplateTitleInput] = useState(false)
@@ -142,11 +144,11 @@ export function GenerationForm() {
           reset({
             inputText: data.prompt_text ?? '',
             docType: (data.doc_type ?? docTypeOptions[0].value) as GenerationFormValues['docType'],
-            style: (data.style ?? styleOptions[0].value) as GenerationFormValues['style'],
-            tone: (data.tone ?? toneOptions[0].value) as GenerationFormValues['tone'],
+            style: data.style ?? undefined,
+            tone: data.tone ?? undefined,
             targetAudience: (data.target_audience ??
               targetAudienceOptions[0].value) as GenerationFormValues['targetAudience'],
-            length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
+            length: data.length ?? undefined,
             language: 'ko',
             inputImageUrls: [],
           })
@@ -163,7 +165,7 @@ export function GenerationForm() {
     supabase
       .from('generations')
       .select(
-        'doc_type, style, tone, target_audience, length, language, author_style_id, style_preset, development_structure',
+        'doc_type, style, tone, target_audience, length, language, author_style_id, style_preset, development_structure, additional_instruction, seo_keywords, output_format',
       )
       .eq('id', continueId)
       .single()
@@ -173,17 +175,19 @@ export function GenerationForm() {
           reset({
             inputText: '',
             docType: (data.doc_type ?? docTypeOptions[0].value) as GenerationFormValues['docType'],
-            style: (data.style ?? styleOptions[0].value) as GenerationFormValues['style'],
-            tone: (data.tone ?? toneOptions[0].value) as GenerationFormValues['tone'],
+            style: data.style ?? undefined,
+            tone: data.tone ?? undefined,
             targetAudience: (data.target_audience ??
               targetAudienceOptions[0].value) as GenerationFormValues['targetAudience'],
-            length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
+            length: data.length ?? undefined,
             language,
             inputImageUrls: [],
             authorStyleId: data.author_style_id ?? undefined,
-            stylePreset: (data.style_preset ?? undefined) as GenerationFormValues['stylePreset'],
-            developmentStructure: (data.development_structure ??
-              undefined) as GenerationFormValues['developmentStructure'],
+            stylePreset: data.style_preset ?? undefined,
+            developmentStructure: data.development_structure ?? undefined,
+            additionalInstruction: data.additional_instruction ?? undefined,
+            seoKeywords: data.seo_keywords?.length ? data.seo_keywords.join(', ') : undefined,
+            outputFormat: data.output_format ?? undefined,
             continueFromGenerationId: continueId,
           })
           setUseCustomLanguage(language !== 'ko' && language !== 'en')
@@ -254,7 +258,7 @@ export function GenerationForm() {
         <div>
           <h1 className="font-serif text-2xl font-semibold text-ink">글 생성하기</h1>
           <p className="mt-1 text-sm text-ink/60">
-            주제와 원하는 스타일을 알려주시면 AI가 글을 완성해드려요.
+            주제, 글 종류, 타겟 독자만 알려주셔도 바로 생성할 수 있어요.
           </p>
         </div>
 
@@ -299,6 +303,7 @@ export function GenerationForm() {
           </div>
         )}
 
+        {/* Step 1: 필수 입력 — 이것만 채워도 바로 생성 가능 */}
         <TextArea
           label={continuingFromId ? '다음 내용 지시' : '주제 / 키워드'}
           placeholder={
@@ -310,95 +315,12 @@ export function GenerationForm() {
           {...register('inputText')}
         />
 
-        <Controller
-          control={control}
-          name="inputImageUrls"
-          render={({ field: urlsField }) => (
-            <Controller
-              control={control}
-              name="imageMode"
-              render={({ field: modeField }) => (
-                <ImageUpload
-                  value={urlsField.value}
-                  onChange={urlsField.onChange}
-                  mode={modeField.value ?? null}
-                  onModeChange={modeField.onChange}
-                  error={errors.imageMode?.message}
-                />
-              )}
-            />
-          )}
-        />
-
-        <Select
-          label="글 종류"
-          options={[...docTypeOptions]}
-          error={errors.docType?.message}
-          {...register('docType')}
-        />
-
-        <div className="flex flex-col gap-1.5">
-          <Select
-            label="전개 방식"
-            options={DEVELOPMENT_STRUCTURES.map((structure) => ({
-              value: structure.key,
-              label: structure.label,
-            }))}
-            error={errors.developmentStructure?.message}
-            {...register('developmentStructure')}
-          />
-          {selectedDevelopmentStructure && (
-            <p className="text-xs text-ink/50">{selectedDevelopmentStructure.description}</p>
-          )}
-        </div>
-
-        {docCategory === 'creative' && (
-          <div className="flex flex-col gap-1.5">
-            <Select
-              label="작가 스타일 (선택)"
-              placeholder="선택 안 함"
-              options={authorStyles.map((style) => {
-                const detail = [style.nationality, style.representative_works]
-                  .filter(Boolean)
-                  .join(' · ')
-                return {
-                  value: style.id,
-                  label: detail ? `${style.name} (${detail})` : style.name,
-                }
-              })}
-              error={errors.authorStyleId?.message}
-              {...register('authorStyleId')}
-            />
-            {selectedAuthorStyle?.tier === 'tier2' && (
-              <p className="text-xs text-amber-600">
-                이 작가는 데이터가 적어 문체 재현 정확도가 낮을 수 있습니다
-              </p>
-            )}
-          </div>
-        )}
-
-        {docCategory === 'practical' && (
-          <Select
-            label="문체 프리셋 (선택)"
-            placeholder="선택 안 함"
-            options={[...stylePresetOptions]}
-            error={errors.stylePreset?.message}
-            {...register('stylePreset')}
-          />
-        )}
-
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Select
-            label="스타일"
-            options={[...styleOptions]}
-            error={errors.style?.message}
-            {...register('style')}
-          />
-          <Select
-            label="톤"
-            options={[...toneOptions]}
-            error={errors.tone?.message}
-            {...register('tone')}
+            label="글 종류"
+            options={[...docTypeOptions]}
+            error={errors.docType?.message}
+            {...register('docType')}
           />
           <Select
             label="타겟 독자"
@@ -406,43 +328,173 @@ export function GenerationForm() {
             error={errors.targetAudience?.message}
             {...register('targetAudience')}
           />
-          <Select
-            label="분량"
-            options={[...lengthOptions]}
-            error={errors.length?.message}
-            {...register('length')}
-          />
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-ink/80">언어</label>
-              <button
-                type="button"
-                onClick={handleToggleCustomLanguage}
-                className="text-xs text-ink/50 hover:text-ink"
-              >
-                {useCustomLanguage ? '목록에서 선택' : '직접 입력'}
-              </button>
-            </div>
-            {useCustomLanguage ? (
-              <input
-                type="text"
-                placeholder="예: 프랑스어, 베트남어, 스페인어"
-                className="input"
-                {...register('language')}
-              />
-            ) : (
-              <select className="input" {...register('language')}>
-                <option value="">선택해주세요</option>
-                {languageOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.language && <p className="text-sm text-red-600">{errors.language.message}</p>}
-          </div>
         </div>
+
+        <TextArea
+          label="AI에게 추가 요청 (선택)"
+          placeholder="예: 반말로 작성해줘 / SEO를 고려해줘 / 표를 넣어줘 / 사례를 포함해줘"
+          rows={2}
+          error={errors.additionalInstruction?.message}
+          {...register('additionalInstruction')}
+        />
+
+        {/* Step 2: 고급 설정 — 기본은 접힘 */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((current) => !current)}
+          className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-ink/70 hover:bg-paper"
+        >
+          고급 설정
+          <span className="text-ink/40">{showAdvanced ? '▲' : '▼'}</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="flex flex-col gap-4 rounded-xl border border-line bg-paper p-4">
+            <Controller
+              control={control}
+              name="inputImageUrls"
+              render={({ field: urlsField }) => (
+                <Controller
+                  control={control}
+                  name="imageMode"
+                  render={({ field: modeField }) => (
+                    <ImageUpload
+                      value={urlsField.value}
+                      onChange={urlsField.onChange}
+                      mode={modeField.value ?? null}
+                      onModeChange={modeField.onChange}
+                      error={errors.imageMode?.message}
+                    />
+                  )}
+                />
+              )}
+            />
+
+            <div className="flex flex-col gap-1.5">
+              <Select
+                label="전개 방식 (선택)"
+                placeholder="선택 안 함"
+                options={DEVELOPMENT_STRUCTURES.map((structure) => ({
+                  value: structure.key,
+                  label: structure.label,
+                }))}
+                error={errors.developmentStructure?.message}
+                {...register('developmentStructure')}
+              />
+              {selectedDevelopmentStructure && (
+                <p className="text-xs text-ink/50">{selectedDevelopmentStructure.description}</p>
+              )}
+            </div>
+
+            {docCategory === 'creative' && (
+              <div className="flex flex-col gap-1.5">
+                <Select
+                  label="작가 스타일 (선택)"
+                  placeholder="선택 안 함"
+                  options={authorStyles.map((style) => {
+                    const detail = [style.nationality, style.representative_works]
+                      .filter(Boolean)
+                      .join(' · ')
+                    return {
+                      value: style.id,
+                      label: detail ? `${style.name} (${detail})` : style.name,
+                    }
+                  })}
+                  error={errors.authorStyleId?.message}
+                  {...register('authorStyleId')}
+                />
+                {selectedAuthorStyle?.tier === 'tier2' && (
+                  <p className="text-xs text-amber-600">
+                    이 작가는 데이터가 적어 문체 재현 정확도가 낮을 수 있습니다
+                  </p>
+                )}
+              </div>
+            )}
+
+            {docCategory === 'practical' && (
+              <Select
+                label="문체 프리셋 (선택)"
+                placeholder="선택 안 함"
+                options={[...stylePresetOptions]}
+                error={errors.stylePreset?.message}
+                {...register('stylePreset')}
+              />
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Select
+                label="스타일 (선택)"
+                placeholder="선택 안 함"
+                options={[...styleOptions]}
+                error={errors.style?.message}
+                {...register('style')}
+              />
+              <Select
+                label="톤 (선택)"
+                placeholder="선택 안 함"
+                options={[...toneOptions]}
+                error={errors.tone?.message}
+                {...register('tone')}
+              />
+              <Select
+                label="분량 (선택)"
+                placeholder="선택 안 함"
+                options={[...lengthOptions]}
+                error={errors.length?.message}
+                {...register('length')}
+              />
+              <Select
+                label="출력 형식 (선택)"
+                placeholder="마크다운 (기본)"
+                options={[...outputFormatOptions]}
+                error={errors.outputFormat?.message}
+                {...register('outputFormat')}
+              />
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-ink/80">언어 (선택)</label>
+                  <button
+                    type="button"
+                    onClick={handleToggleCustomLanguage}
+                    className="text-xs text-ink/50 hover:text-ink"
+                  >
+                    {useCustomLanguage ? '목록에서 선택' : '직접 입력'}
+                  </button>
+                </div>
+                {useCustomLanguage ? (
+                  <input
+                    type="text"
+                    placeholder="예: 프랑스어, 베트남어, 스페인어"
+                    className="input"
+                    {...register('language')}
+                  />
+                ) : (
+                  <select className="input" {...register('language')}>
+                    <option value="">선택 안 함 (기본 한국어)</option>
+                    {languageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {errors.language && (
+                  <p className="text-sm text-red-600">{errors.language.message}</p>
+                )}
+              </div>
+            </div>
+
+            <input
+              type="text"
+              placeholder="SEO 키워드 (쉼표로 구분, 선택)"
+              className="input"
+              {...register('seoKeywords')}
+            />
+            {errors.seoKeywords && (
+              <p className="text-sm text-red-600">{errors.seoKeywords.message}</p>
+            )}
+          </div>
+        )}
 
         <button
           type="submit"
