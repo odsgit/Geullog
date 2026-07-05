@@ -9,6 +9,13 @@ export interface BlogPostMeta {
 // (server-side SEO meta injection) read this manifest.
 export const blogPosts: BlogPostMeta[] = [
   {
+    slug: 'geullog-v2-devlog',
+    title: 'Geullog v2.0 개발기: 새 기능보다 고치는 데 더 많은 시간을 쓴 버전',
+    description:
+      '시작하자마자 멈춘 마이그레이션부터 버전 되돌리기가 숨어있던 자리, 폼 간소화, 글 종류 재설계, 이어쓰기 개선까지 — v2.0 개발 기록.',
+    date: '2026-07-06',
+  },
+  {
     slug: 'sns-caption-tips',
     title: 'SNS 캡션 잘 쓰는 팁 5가지',
     description:
