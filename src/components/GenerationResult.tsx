@@ -19,6 +19,8 @@ interface GenerationResultProps {
   generationId: string
   initialText: string
   initialIsPublic?: boolean
+  /** 재생성/톤조정으로 새 generation_versions row가 생겼을 때 호출됨(버전 타임라인 갱신용). */
+  onVersionCreated?: () => void
 }
 
 const actionLabels: Record<ActionMode, string> = {
@@ -31,6 +33,7 @@ export function GenerationResult({
   generationId,
   initialText,
   initialIsPublic = false,
+  onVersionCreated,
 }: GenerationResultProps) {
   const editorRef = useRef<RichTextEditorHandle>(null)
   const [busy, setBusy] = useState<ActionMode | null>(null)
@@ -100,6 +103,7 @@ export function GenerationResult({
 
     if (fullText) {
       editorRef.current?.setContent(fullText)
+      onVersionCreated?.()
     }
     setBusy(null)
   }

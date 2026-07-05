@@ -9,6 +9,20 @@ interface Env {
   SUPABASE_ANON_KEY: string
 }
 
+// STEP E 완료 기준 모니터링용: 재시도는 하지 않고 로그만 남긴다(Cloudflare Pages
+// Functions 로그에서 확인). 마크다운 구조 강제 프롬프트가 실제로 문단 구분을
+// 만들어내고 있는지 관찰하기 위한 용도.
+function logStructureIntegrity(text: string) {
+  if (!text.includes('\n\n')) {
+    console.warn('[structure-check] output_text has no paragraph breaks (\\n\\n)')
+    return
+  }
+  const longestSegment = Math.max(...text.split('\n\n').map((segment) => segment.length))
+  if (longestSegment >= 500) {
+    console.warn(`[structure-check] output_text has a ${longestSegment}-char run with no break`)
+  }
+}
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const authHeader = context.request.headers.get('Authorization')
   if (!authHeader) {
@@ -114,25 +128,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        let authorStyleDescription: string | null = null
+        let authorStyle: { description: string; tier: string; traits: string[] | null } | null =
+          null
         if (input.authorStyleId) {
-          const { data: authorStyle } = await supabase
+          const { data: authorStyleRow } = await supabase
             .from('author_styles')
-            .select('style_description')
+            .select('style_description, tier, traits')
             .eq('id', input.authorStyleId)
             .single()
-          authorStyleDescription = authorStyle?.style_description ?? null
-        }
-
-        let narrativeTypeDescription: string | null = null
-        if (input.narrativeTypeId) {
-          const { data: narrativeType } = await supabase
-            .from('narrative_types')
-            .select('definition, core_elements')
-            .eq('id', input.narrativeTypeId)
-            .single()
-          narrativeTypeDescription = narrativeType
-            ? `${narrativeType.definition}${narrativeType.core_elements ? ` (특히 ${narrativeType.core_elements}에 집중하세요)` : ''}`
+          authorStyle = authorStyleRow
+            ? {
+                description: authorStyleRow.style_description,
+                tier: authorStyleRow.tier,
+                traits: authorStyleRow.traits,
+              }
             : null
         }
 
@@ -143,16 +152,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             encoder.encode(`data: ${JSON.stringify({ status: 'analyzing_image' })}\n\n`),
           )
 
+          const visionInstruction =
+            input.imageMode === 'ocr'
+              ? '이미지에 포함된 텍스트를 빠짐없이 정확하게 그대로 추출하라. 해석하거나 요약하지 마라.'
+              : '이미지의 분위기, 색감, 구도, 피사체의 인상을 감각적인 언어로 묘사하라. 텍스트가 있어도 무시하라.'
+
           const visionResponse = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
               {
                 role: 'user',
                 content: [
-                  {
-                    type: 'text',
-                    text: '이 사진에 무엇이 담겨 있는지 글쓰기에 참고할 수 있도록 자세히 설명해주세요.',
-                  },
+                  { type: 'text', text: visionInstruction },
                   { type: 'image_url', image_url: { url: input.inputImageUrls[0] } },
                 ],
               },
@@ -166,8 +177,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         const { system, user: userPrompt } = buildPrompt(
           input,
           imageDescription,
-          authorStyleDescription,
-          narrativeTypeDescription,
+          authorStyle,
           continuationContext,
         )
 
@@ -192,6 +202,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           }
         }
 
+        logStructureIntegrity(fullText)
+
         const { data: recorded, error: recordError } = await supabase.rpc('record_generation', {
           p_input_text: input.inputText,
           p_input_image_urls: input.inputImageUrls,
@@ -203,11 +215,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           p_language: input.language,
           p_output_text: fullText,
           p_tokens_used: tokensUsed,
+          p_development_structure: input.developmentStructure,
           p_author_style_id: input.authorStyleId || null,
-          p_narrative_type_id: input.narrativeTypeId || null,
+          p_style_preset: input.stylePreset || null,
           p_series_id: seriesId,
           p_part_number: partNumber,
-          p_detailed_genre: input.detailedGenre || null,
+          p_image_mode: input.imageMode || null,
         })
 
         if (recordError) {

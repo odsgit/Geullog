@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import ReactMarkdown from 'react-markdown'
 import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
 import { ImageUpload } from '@/components/ImageUpload'
@@ -10,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
 import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
-import { parseExampleGenres } from '@/lib/narrativeGenres'
+import { DOC_TYPE_CATEGORY, DEVELOPMENT_STRUCTURES, stylePresetOptions } from '@/lib/constants'
 import {
   docTypeOptions,
   styleOptions,
@@ -27,13 +28,7 @@ interface AuthorStyleOption {
   name: string
   nationality: string | null
   representative_works: string | null
-}
-
-interface NarrativeTypeOption {
-  id: string
-  name: string
-  definition: string
-  example_genres: string | null
+  tier: string
 }
 
 interface SeriesPart {
@@ -99,7 +94,6 @@ export function GenerationForm() {
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateSaved, setTemplateSaved] = useState(false)
   const [authorStyles, setAuthorStyles] = useState<AuthorStyleOption[]>([])
-  const [narrativeTypes, setNarrativeTypes] = useState<NarrativeTypeOption[]>([])
   const [continuingFromId, setContinuingFromId] = useState<string | null>(null)
   const [seriesParts, setSeriesParts] = useState<SeriesPart[]>([])
   const [expandedPartId, setExpandedPartId] = useState<string | null>(null)
@@ -107,24 +101,31 @@ export function GenerationForm() {
   useEffect(() => {
     supabase
       .from('author_styles')
-      .select('id, name, nationality, representative_works')
+      .select('id, name, nationality, representative_works, tier')
       .order('name')
       .then(({ data }) => setAuthorStyles(data ?? []))
   }, [])
 
-  useEffect(() => {
-    supabase
-      .from('narrative_types')
-      .select('id, name, definition, example_genres')
-      .order('name')
-      .then(({ data }) => setNarrativeTypes(data ?? []))
-  }, [])
+  const docType = watch('docType')
+  const docCategory = docType ? DOC_TYPE_CATEGORY[docType] : undefined
+  const selectedAuthorStyleId = watch('authorStyleId')
+  const selectedAuthorStyle = authorStyles.find((style) => style.id === selectedAuthorStyleId)
+  const developmentStructureKey = watch('developmentStructure')
+  const selectedDevelopmentStructure = DEVELOPMENT_STRUCTURES.find(
+    (structure) => structure.key === developmentStructureKey,
+  )
+  const imageUrls = watch('inputImageUrls')
 
-  const selectedNarrativeTypeId = watch('narrativeTypeId')
-  const selectedNarrativeType = narrativeTypes.find((type) => type.id === selectedNarrativeTypeId)
-  const genreOptions = selectedNarrativeType
-    ? parseExampleGenres(selectedNarrativeType.example_genres ?? '')
-    : []
+  // author_style과 style_preset은 doc_type 카테고리에 따라 서로 배타적으로 노출되므로,
+  // 카테고리가 바뀌면 반대쪽 필드는 즉시 비워서 숨겨진 값이 실수로 제출되지 않게 한다.
+  useEffect(() => {
+    if (!docCategory) return
+    if (docCategory === 'practical') {
+      setValue('authorStyleId', undefined)
+    } else {
+      setValue('stylePreset', undefined)
+    }
+  }, [docCategory, setValue])
 
   useEffect(() => {
     const templateId = localStorage.getItem(TEMPLATE_STORAGE_KEY)
@@ -148,7 +149,6 @@ export function GenerationForm() {
             length: (data.length ?? lengthOptions[0].value) as GenerationFormValues['length'],
             language: 'ko',
             inputImageUrls: [],
-            detailedGenre: undefined,
           })
           setUseCustomLanguage(false)
         }
@@ -163,7 +163,7 @@ export function GenerationForm() {
     supabase
       .from('generations')
       .select(
-        'doc_type, style, tone, target_audience, length, language, author_style_id, narrative_type_id, detailed_genre',
+        'doc_type, style, tone, target_audience, length, language, author_style_id, style_preset, development_structure',
       )
       .eq('id', continueId)
       .single()
@@ -181,8 +181,9 @@ export function GenerationForm() {
             language,
             inputImageUrls: [],
             authorStyleId: data.author_style_id ?? undefined,
-            narrativeTypeId: data.narrative_type_id ?? undefined,
-            detailedGenre: data.detailed_genre ?? undefined,
+            stylePreset: (data.style_preset ?? undefined) as GenerationFormValues['stylePreset'],
+            developmentStructure: (data.development_structure ??
+              undefined) as GenerationFormValues['developmentStructure'],
             continueFromGenerationId: continueId,
           })
           setUseCustomLanguage(language !== 'ko' && language !== 'en')
@@ -215,8 +216,6 @@ export function GenerationForm() {
       inputText: '',
       inputImageUrls: [],
       authorStyleId: undefined,
-      narrativeTypeId: undefined,
-      detailedGenre: undefined,
       continueFromGenerationId: undefined,
     })
   }
@@ -314,59 +313,81 @@ export function GenerationForm() {
         <Controller
           control={control}
           name="inputImageUrls"
-          render={({ field }) => <ImageUpload value={field.value} onChange={field.onChange} />}
+          render={({ field: urlsField }) => (
+            <Controller
+              control={control}
+              name="imageMode"
+              render={({ field: modeField }) => (
+                <ImageUpload
+                  value={urlsField.value}
+                  onChange={urlsField.onChange}
+                  mode={modeField.value ?? null}
+                  onModeChange={modeField.onChange}
+                  error={errors.imageMode?.message}
+                />
+              )}
+            />
+          )}
         />
 
         <Select
-          label="작가 스타일 (선택)"
-          placeholder="선택 안 함"
-          options={authorStyles.map((style) => {
-            const detail = [style.nationality, style.representative_works]
-              .filter(Boolean)
-              .join(' · ')
-            return {
-              value: style.id,
-              label: detail ? `${style.name} (${detail})` : style.name,
-            }
-          })}
-          error={errors.authorStyleId?.message}
-          {...register('authorStyleId')}
+          label="글 종류"
+          options={[...docTypeOptions]}
+          error={errors.docType?.message}
+          {...register('docType')}
         />
 
-        <Select
-          label="서술 유형 (선택)"
-          placeholder="선택 안 함"
-          options={narrativeTypes.map((type) => ({ value: type.id, label: type.name }))}
-          error={errors.narrativeTypeId?.message}
-          {...register('narrativeTypeId', { onChange: () => setValue('detailedGenre', '') })}
-        />
+        <div className="flex flex-col gap-1.5">
+          <Select
+            label="전개 방식"
+            options={DEVELOPMENT_STRUCTURES.map((structure) => ({
+              value: structure.key,
+              label: structure.label,
+            }))}
+            error={errors.developmentStructure?.message}
+            {...register('developmentStructure')}
+          />
+          {selectedDevelopmentStructure && (
+            <p className="text-xs text-ink/50">{selectedDevelopmentStructure.description}</p>
+          )}
+        </div>
 
-        {selectedNarrativeType && (
-          <div className="flex flex-col gap-4 rounded-xl border border-line bg-paper px-4 py-3">
-            <p className="text-sm text-ink/70">{selectedNarrativeType.definition}</p>
-
-            {genreOptions.length > 0 && (
-              <Select
-                label="세부 장르 (선택)"
-                placeholder="선택 안 함"
-                options={genreOptions.map((genre) => ({
-                  value: genre.name,
-                  label: genre.detail ? `${genre.name} (${genre.detail})` : genre.name,
-                }))}
-                error={errors.detailedGenre?.message}
-                {...register('detailedGenre')}
-              />
+        {docCategory === 'creative' && (
+          <div className="flex flex-col gap-1.5">
+            <Select
+              label="작가 스타일 (선택)"
+              placeholder="선택 안 함"
+              options={authorStyles.map((style) => {
+                const detail = [style.nationality, style.representative_works]
+                  .filter(Boolean)
+                  .join(' · ')
+                return {
+                  value: style.id,
+                  label: detail ? `${style.name} (${detail})` : style.name,
+                }
+              })}
+              error={errors.authorStyleId?.message}
+              {...register('authorStyleId')}
+            />
+            {selectedAuthorStyle?.tier === 'tier2' && (
+              <p className="text-xs text-amber-600">
+                이 작가는 데이터가 적어 문체 재현 정확도가 낮을 수 있습니다
+              </p>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {docCategory === 'practical' && (
           <Select
-            label="글 종류"
-            options={[...docTypeOptions]}
-            error={errors.docType?.message}
-            {...register('docType')}
+            label="문체 프리셋 (선택)"
+            placeholder="선택 안 함"
+            options={[...stylePresetOptions]}
+            error={errors.stylePreset?.message}
+            {...register('stylePreset')}
           />
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Select
             label="스타일"
             options={[...styleOptions]}
@@ -425,7 +446,11 @@ export function GenerationForm() {
 
         <button
           type="submit"
-          disabled={status === 'analyzing_image' || status === 'streaming'}
+          disabled={
+            status === 'analyzing_image' ||
+            status === 'streaming' ||
+            (imageUrls.length > 0 && !watch('imageMode'))
+          }
           className="btn-primary w-full"
         >
           {status === 'analyzing_image'
@@ -472,15 +497,23 @@ export function GenerationForm() {
             {status === 'analyzing_image' && (
               <p className="text-sm text-ink/50">사진을 분석하고 있어요...</p>
             )}
-            {output && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{output}</p>
-            )}
+            {output && <StreamingPreview text={output} />}
             {status === 'done' && remainingCredits !== null && (
               <p className="mt-4 text-xs text-ink/50">남은 크레딧: {remainingCredits}</p>
             )}
           </div>
         )
       )}
+    </div>
+  )
+}
+
+// Re-parses the full accumulated text on every chunk (no partial-parse
+// caching) so headings/paragraphs never render half-formed mid-stream.
+function StreamingPreview({ text }: { text: string }) {
+  return (
+    <div className="prose prose-sm max-w-none leading-relaxed">
+      <ReactMarkdown>{text}</ReactMarkdown>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import ReactMarkdown from 'react-markdown'
 import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
 import { useTrialGeneration } from '@/hooks/useTrialGeneration'
@@ -15,6 +16,7 @@ import {
   generationFormSchema,
   type GenerationFormValues,
 } from '@/lib/generationSchema'
+import { DEVELOPMENT_STRUCTURES } from '@/lib/constants'
 import { TRIAL_USED_KEY } from '@/lib/trialStorage'
 
 export function TrialPage() {
@@ -70,6 +72,16 @@ export function TrialPage() {
               {...register('inputText')}
             />
 
+            <Select
+              label="전개 방식"
+              options={DEVELOPMENT_STRUCTURES.map((structure) => ({
+                value: structure.key,
+                label: structure.label,
+              }))}
+              error={errors.developmentStructure?.message}
+              {...register('developmentStructure')}
+            />
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Select
                 label="글 종류"
@@ -119,7 +131,9 @@ export function TrialPage() {
           <div className="card p-8">
             {error && <p className="text-sm text-red-600">{error}</p>}
             {output && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{output}</p>
+              <div className="prose prose-sm max-w-none leading-relaxed">
+                <ReactMarkdown>{output}</ReactMarkdown>
+              </div>
             )}
           </div>
         )}

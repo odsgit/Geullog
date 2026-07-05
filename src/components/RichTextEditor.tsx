@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle } from 'react'
 import { useEditor, EditorContent, type Editor, type JSONContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import { Markdown } from 'tiptap-markdown'
 
 interface RichTextEditorProps {
   content: string
@@ -13,10 +14,13 @@ export interface RichTextEditorHandle {
   setContent: (text: string) => void
 }
 
+// content is markdown (## headings, blank-line paragraphs, - bullets) coming
+// from the generation prompt's structure enforcement — the Markdown extension
+// parses it into real heading/paragraph/list nodes instead of one flat blob.
 export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
   ({ content }, ref) => {
     const editor = useEditor({
-      extensions: [StarterKit],
+      extensions: [StarterKit, Markdown],
       content,
     })
 

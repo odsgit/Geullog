@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DOC_TYPE_CATEGORY, DEVELOPMENT_STRUCTURES, stylePresetOptions } from './constants'
 
 export const docTypeOptions = [
   { value: 'blog', label: '블로그 포스트' },
@@ -9,9 +10,9 @@ export const docTypeOptions = [
   { value: 'press', label: '보도자료' },
 ] as const
 
+// 정보전달형/스토리텔링형은 (제거된) 서술 유형의 설명/서사와 개념이 중복돼 제거함.
+// development_structure(전개 방식)가 그 역할을 대신한다.
 export const styleOptions = [
-  { value: 'informative', label: '정보 전달형' },
-  { value: 'storytelling', label: '스토리텔링형' },
   { value: 'listicle', label: '리스트형' },
   { value: 'qna', label: 'Q&A형' },
 ] as const
@@ -48,7 +49,13 @@ function valuesOf<T extends { value: string }>(options: readonly T[]) {
   return options.map((option) => option.value) as [string, ...string[]]
 }
 
-export const generationFormSchema = z.object({
+const developmentStructureKeys = DEVELOPMENT_STRUCTURES.map((structure) => structure.key) as [
+  string,
+  ...string[],
+]
+const stylePresetKeys = valuesOf(stylePresetOptions)
+
+const baseGenerationFormSchema = z.object({
   inputText: z.string().trim().min(1, '주제나 키워드를 입력해주세요'),
   docType: z.enum(valuesOf(docTypeOptions), { message: '글 종류를 선택해주세요' }),
   style: z.enum(valuesOf(styleOptions), { message: '스타일을 선택해주세요' }),
@@ -59,13 +66,41 @@ export const generationFormSchema = z.object({
   length: z.enum(valuesOf(lengthOptions), { message: '분량을 선택해주세요' }),
   language: z.string().trim().min(1, '언어를 선택해주세요'),
   inputImageUrls: z.array(z.string()),
+  developmentStructure: z.enum(developmentStructureKeys, { message: '전개 방식을 선택해주세요' }),
   authorStyleId: z.string().optional(),
-  narrativeTypeId: z.string().optional(),
-  detailedGenre: z.string().optional(),
+  stylePreset: z.enum(stylePresetKeys).optional(),
+  imageMode: z.enum(['ocr', 'describe']).optional(),
   continueFromGenerationId: z.string().optional(),
 })
 
-export type GenerationFormValues = z.infer<typeof generationFormSchema>
+export const generationFormSchema = baseGenerationFormSchema.superRefine((data, ctx) => {
+  const category = DOC_TYPE_CATEGORY[data.docType]
+
+  if (category === 'practical' && data.authorStyleId) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['authorStyleId'],
+      message: '실용형 글 종류에는 작가 스타일을 적용할 수 없습니다',
+    })
+  }
+  if (category === 'creative' && data.stylePreset) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['stylePreset'],
+      message: '창작형 글 종류에는 문체 프리셋을 적용할 수 없습니다',
+    })
+  }
+
+  if (data.inputImageUrls.length > 0 && !data.imageMode) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['imageMode'],
+      message: '사진 사용 방식을 선택해주세요',
+    })
+  }
+})
+
+export type GenerationFormValues = z.infer<typeof baseGenerationFormSchema>
 
 export const regenerateRequestSchema = z.object({
   generationId: z.string(),

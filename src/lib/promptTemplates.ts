@@ -1,4 +1,5 @@
 import type { GenerationFormValues } from './generationSchema'
+import { findDevelopmentStructure, type DevelopmentStructure } from './constants'
 
 const docTypeInstructions: Record<string, string> = {
   blog: '블로그 포스트 형식으로, 도입-본론-결론 구조를 갖춰 작성하세요.',
@@ -10,8 +11,6 @@ const docTypeInstructions: Record<string, string> = {
 }
 
 const styleInstructions: Record<string, string> = {
-  informative: '정보를 명확하고 체계적으로 전달하는 정보 전달형으로 작성하세요.',
-  storytelling: '이야기를 들려주듯 스토리텔링 기법으로 작성하세요.',
   listicle: '핵심 포인트를 나열하는 리스트 형식으로 작성하세요.',
   qna: '질문과 답변 형식(Q&A)으로 작성하세요.',
 }
@@ -21,6 +20,13 @@ const toneInstructions: Record<string, string> = {
   friendly: '친근하고 편안한 어조를 사용하세요.',
   humorous: '유머러스하고 재치있는 어조를 사용하세요.',
   professional: '전문적이고 신뢰감 있는 어조를 사용하세요.',
+}
+
+const stylePresetInstructions: Record<string, string> = {
+  concise: '군더더기 없이 간결하고 명확한 문장으로 작성하세요.',
+  lyrical: '서정적이고 정서가 풍부한 문장으로 작성하세요.',
+  humorous_preset: '유머러스하고 재치있는 문장으로 작성하세요.',
+  trustworthy: '신뢰감을 주는 안정적이고 전문적인 문장으로 작성하세요.',
 }
 
 const targetAudienceInstructions: Record<string, string> = {
@@ -48,28 +54,61 @@ function languageInstruction(language: string): string {
   return languageInstructions[language] ?? `${language}로 작성하세요.`
 }
 
+// 마크다운을 강제하는 실용형 구조(아래 developmentStructureInstruction)와 충돌하므로
+// NO_MARKDOWN_INSTRUCTION은 더 이상 buildPrompt의 기본 시스템 프롬프트에 넣지 않는다.
+// 톤 조정(더 캐주얼/격식있게)처럼 구조 강제가 필요 없는 짧은 재작성에서만 계속 사용한다.
 export const NO_MARKDOWN_INSTRUCTION =
   '#, *, - 같은 마크다운 문법은 사용하지 말고 일반 텍스트로만 작성하세요.'
+
+// 전개방식별 구조 강제 지시. 실용형(소제목/불릿 예시 few-shot 포함)과 문학형(빈 줄
+// 문단 구분만, 소제목 강제 금지)을 분기한다 — 문학형에 소제목을 강제하면 톤이 깨진다.
+function developmentStructureInstruction(structure: DevelopmentStructure): string {
+  const stepsList = structure.structureSteps.join(' → ')
+  const common = `당신은 유저가 선택한 [${structure.label}] 전개 방식(${stepsList})에 맞춰 글을 작성해야 합니다. 독자가 글의 구조를 직관적으로 파악할 수 있도록 반드시 문단을 명확히 분리하십시오. 각 단계가 바뀔 때마다 줄 바꿈을 2번(빈 줄 하나)하여 단락을 확실히 구분하세요.`
+
+  if (structure.practical) {
+    const fewShot = structure.structureSteps.map((step) => `## ${step}\n(내용)`).join('\n\n')
+    return `${common} 각 단계마다 소제목(##)이나 필요하면 불릿(-)을 적극 활용해 다음과 같은 형식을 따르세요:\n${fewShot}`
+  }
+
+  return `${common} 소제목은 사용하지 말고, 단락 구분(빈 줄)만으로 전환을 표현하세요.`
+}
+
+interface AuthorStyleInfo {
+  description: string
+  tier: string
+  traits: string[] | null
+}
+
+// tier2(재현 신뢰도가 낮은 희소 데이터 작가)는 이름과 설명만 언급하는 대신, 조사해둔
+// 구체적 traits를 불릿으로 직접 주입해 모델의 암묵적 지식 부족을 보완한다.
+function authorStyleInstruction(authorStyle: AuthorStyleInfo): string {
+  if (authorStyle.tier === 'tier2' && authorStyle.traits && authorStyle.traits.length > 0) {
+    const bullets = authorStyle.traits.map((trait) => `- ${trait}`).join('\n')
+    return `다음 문체적 특징을 반드시 반영해서 작성하세요:\n${bullets}`
+  }
+  return `다음 문체를 참고해서 작성하세요: ${authorStyle.description}`
+}
 
 export function buildPrompt(
   input: GenerationFormValues,
   imageDescription?: string | null,
-  authorStyleDescription?: string | null,
-  narrativeTypeDescription?: string | null,
+  authorStyle?: AuthorStyleInfo | null,
   continuationContext?: string | null,
 ) {
+  const structure = findDevelopmentStructure(input.developmentStructure)
+
   const system = [
     '당신은 전문 카피라이터이자 콘텐츠 작가입니다.',
-    NO_MARKDOWN_INSTRUCTION,
     docTypeInstructions[input.docType],
     styleInstructions[input.style],
     toneInstructions[input.tone],
+    input.stylePreset ? stylePresetInstructions[input.stylePreset] : null,
     targetAudienceInstructions[input.targetAudience],
     lengthInstructions[input.length],
     languageInstruction(input.language),
-    authorStyleDescription ? `다음 문체를 참고해서 작성하세요: ${authorStyleDescription}` : null,
-    narrativeTypeDescription ? `다음 서술 방식으로 작성하세요: ${narrativeTypeDescription}` : null,
-    input.detailedGenre ? `다음 세부 장르에 맞게 작성하세요: ${input.detailedGenre}` : null,
+    structure ? developmentStructureInstruction(structure) : null,
+    authorStyle ? authorStyleInstruction(authorStyle) : null,
     continuationContext
       ? '이것은 여러 부분으로 이어지는 긴 글의 다음 부분입니다. 이전 내용의 문체, 등장인물, 설정과의 일관성을 유지하며 자연스럽게 이어서 작성하세요.'
       : null,
@@ -77,9 +116,11 @@ export function buildPrompt(
     .filter(Boolean)
     .join(' ')
 
+  const imageLabel = input.imageMode === 'ocr' ? '사진 속 텍스트' : '사진 분위기 묘사'
+
   const user = [
     continuationContext ? `[이전 내용]\n${continuationContext}` : null,
-    imageDescription ? `[첨부된 사진 설명]\n${imageDescription}` : null,
+    imageDescription ? `[${imageLabel}]\n${imageDescription}` : null,
     continuationContext
       ? `[다음 부분에 대한 지시]\n${input.inputText}\n\n위 이전 내용에 자연스럽게 이어서 다음 부분을 작성하세요.`
       : imageDescription

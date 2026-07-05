@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
 import { useTrialGeneration } from '@/hooks/useTrialGeneration'
 import { TRIAL_USED_KEY } from '@/lib/trialStorage'
 import type { GenerationFormValues } from '@/lib/generationSchema'
 
 const DEMO_DEFAULTS: Omit<GenerationFormValues, 'inputText'> = {
   docType: 'sns',
-  style: 'informative',
+  style: 'listicle',
   tone: 'friendly',
   targetAudience: 'general',
   length: 'short',
   language: 'ko',
   inputImageUrls: [],
+  developmentStructure: 'three_part',
 }
 
 // Landing-page hero that lets an anonymous visitor see AI writing happen
@@ -78,9 +80,9 @@ export function DemoHero() {
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
             {output && (
-              <p className="mt-4 rounded-xl bg-paper p-4 text-sm leading-relaxed whitespace-pre-wrap text-ink">
-                {output}
-              </p>
+              <div className="prose prose-sm mt-4 max-w-none rounded-xl bg-paper p-4 leading-relaxed">
+                <ReactMarkdown>{output}</ReactMarkdown>
+              </div>
             )}
 
             {status === 'done' && (

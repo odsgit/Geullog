@@ -9,28 +9,38 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   'image/webp': 'webp',
 }
 
+type ImageMode = 'ocr' | 'describe'
+
 interface ImageUploadProps {
   value: string[]
   onChange: (urls: string[]) => void
+  mode: ImageMode | null
+  onModeChange: (mode: ImageMode) => void
+  error?: string
 }
 
-export function ImageUpload({ value, onChange }: ImageUploadProps) {
+const modeOptions: { value: ImageMode; label: string }[] = [
+  { value: 'ocr', label: '① 사진 속 글자 읽기' },
+  { value: 'describe', label: '② 사진 분위기·내용 묘사' },
+]
+
+export function ImageUpload({ value, onChange, mode, onModeChange, error }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
 
-    setError(null)
+    setUploadError(null)
 
     if (file.size > MAX_SIZE_BYTES) {
-      setError('파일 크기는 5MB 이하만 업로드할 수 있습니다')
+      setUploadError('파일 크기는 5MB 이하만 업로드할 수 있습니다')
       return
     }
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError('jpg, png, webp 형식만 업로드할 수 있습니다')
+      setUploadError('jpg, png, webp 형식만 업로드할 수 있습니다')
       return
     }
 
@@ -40,18 +50,18 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
-        setError('로그인이 필요합니다')
+        setUploadError('로그인이 필요합니다')
         return
       }
 
       const path = `${user.id}/${crypto.randomUUID()}.${EXTENSION_BY_TYPE[file.type]}`
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadStorageError } = await supabase.storage
         .from('user-uploads')
         .upload(path, file, { contentType: file.type })
 
-      if (uploadError) {
-        setError('업로드에 실패했습니다')
+      if (uploadStorageError) {
+        setUploadError('업로드에 실패했습니다')
         return
       }
 
@@ -60,7 +70,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         .createSignedUrl(path, 60 * 60)
 
       if (signedError || !signedData) {
-        setError('이미지 URL 생성에 실패했습니다')
+        setUploadError('이미지 URL 생성에 실패했습니다')
         return
       }
 
@@ -85,7 +95,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         className="text-sm text-ink/60 file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-dark"
       />
       {uploading && <p className="text-sm text-ink/50">업로드 중...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
       {value.length > 0 && (
         <div className="mt-2 flex gap-2">
           {value.map((url) => (
@@ -104,6 +114,26 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
               </button>
             </div>
           ))}
+        </div>
+      )}
+      {value.length > 0 && (
+        <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p className="text-xs font-semibold text-ink/70">사진을 어떻게 활용할까요?</p>
+          <div className="flex flex-col gap-1">
+            {modeOptions.map((option) => (
+              <label key={option.value} className="flex items-center gap-2 text-sm text-ink/80">
+                <input
+                  type="radio"
+                  name="image-mode"
+                  value={option.value}
+                  checked={mode === option.value}
+                  onChange={() => onModeChange(option.value)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
       )}
     </div>

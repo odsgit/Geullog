@@ -86,7 +86,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             inputImageUrls: Array.isArray(generation.input_image_urls)
               ? (generation.input_image_urls as string[])
               : [],
-            detailedGenre: generation.detailed_genre ?? undefined,
+            developmentStructure: generation.development_structure ?? '',
+            stylePreset: generation.style_preset ?? undefined,
+            imageMode: generation.image_mode ?? undefined,
           }
 
           let imageDescription: string | null = null
@@ -94,16 +96,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ status: 'analyzing_image' })}\n\n`),
             )
+            const visionInstruction =
+              formValues.imageMode === 'ocr'
+                ? '이미지에 포함된 텍스트를 빠짐없이 정확하게 그대로 추출하라. 해석하거나 요약하지 마라.'
+                : '이미지의 분위기, 색감, 구도, 피사체의 인상을 감각적인 언어로 묘사하라. 텍스트가 있어도 무시하라.'
             const visionResponse = await openai.chat.completions.create({
               model: 'gpt-4o-mini',
               messages: [
                 {
                   role: 'user',
                   content: [
-                    {
-                      type: 'text',
-                      text: '이 사진에 무엇이 담겨 있는지 글쓰기에 참고할 수 있도록 자세히 설명해주세요.',
-                    },
+                    { type: 'text', text: visionInstruction },
                     { type: 'image_url', image_url: { url: formValues.inputImageUrls[0] } },
                   ],
                 },
@@ -112,34 +115,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             imageDescription = visionResponse.choices[0]?.message?.content ?? null
           }
 
-          let authorStyleDescription: string | null = null
+          let authorStyle: { description: string; tier: string; traits: string[] | null } | null =
+            null
           if (generation.author_style_id) {
-            const { data: authorStyle } = await supabase
+            const { data: authorStyleRow } = await supabase
               .from('author_styles')
-              .select('style_description')
+              .select('style_description, tier, traits')
               .eq('id', generation.author_style_id)
               .single()
-            authorStyleDescription = authorStyle?.style_description ?? null
-          }
-
-          let narrativeTypeDescription: string | null = null
-          if (generation.narrative_type_id) {
-            const { data: narrativeType } = await supabase
-              .from('narrative_types')
-              .select('definition, core_elements')
-              .eq('id', generation.narrative_type_id)
-              .single()
-            narrativeTypeDescription = narrativeType
-              ? `${narrativeType.definition}${narrativeType.core_elements ? ` (특히 ${narrativeType.core_elements}에 집중하세요)` : ''}`
+            authorStyle = authorStyleRow
+              ? {
+                  description: authorStyleRow.style_description,
+                  tier: authorStyleRow.tier,
+                  traits: authorStyleRow.traits,
+                }
               : null
           }
 
-          const built = buildPrompt(
-            formValues,
-            imageDescription,
-            authorStyleDescription,
-            narrativeTypeDescription,
-          )
+          const built = buildPrompt(formValues, imageDescription, authorStyle)
           system = built.system
           userPrompt = built.user
         } else {
@@ -171,6 +164,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             p_generation_id: input.generationId,
             p_output_text: fullText,
             p_action: input.mode,
+            p_version_type: input.mode === 'regenerate' ? 'generated' : 'tone_adjusted',
           },
         )
 

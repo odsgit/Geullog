@@ -48,6 +48,8 @@ export type Database = {
           nationality: string | null
           representative_works: string | null
           style_description: string
+          tier: string
+          traits: string[] | null
         }
         Insert: {
           active_years?: string | null
@@ -57,6 +59,8 @@ export type Database = {
           nationality?: string | null
           representative_works?: string | null
           style_description: string
+          tier?: string
+          traits?: string[] | null
         }
         Update: {
           active_years?: string | null
@@ -66,6 +70,8 @@ export type Database = {
           nationality?: string | null
           representative_works?: string | null
           style_description?: string
+          tier?: string
+          traits?: string[] | null
         }
         Relationships: []
       }
@@ -105,6 +111,7 @@ export type Database = {
           id: string
           output_text: string
           version_number: number
+          version_type: string
         }
         Insert: {
           created_at?: string
@@ -112,6 +119,7 @@ export type Database = {
           id?: string
           output_text: string
           version_number?: number
+          version_type?: string
         }
         Update: {
           created_at?: string
@@ -119,6 +127,7 @@ export type Database = {
           id?: string
           output_text?: string
           version_number?: number
+          version_type?: string
         }
         Relationships: [
           {
@@ -134,19 +143,21 @@ export type Database = {
         Row: {
           author_style_id: string | null
           created_at: string
-          detailed_genre: string | null
+          current_version_id: string | null
+          development_structure: string | null
           doc_type: string
           id: string
+          image_mode: string | null
           input_image_urls: Json
           input_text: string | null
           is_public: boolean
           language: string | null
           length: string | null
-          narrative_type_id: string | null
           output_text: string | null
           part_number: number | null
           series_id: string | null
           style: string | null
+          style_preset: string | null
           target_audience: string | null
           tokens_used: number | null
           tone: string | null
@@ -155,19 +166,21 @@ export type Database = {
         Insert: {
           author_style_id?: string | null
           created_at?: string
-          detailed_genre?: string | null
+          current_version_id?: string | null
+          development_structure?: string | null
           doc_type: string
           id?: string
+          image_mode?: string | null
           input_image_urls?: Json
           input_text?: string | null
           is_public?: boolean
           language?: string | null
           length?: string | null
-          narrative_type_id?: string | null
           output_text?: string | null
           part_number?: number | null
           series_id?: string | null
           style?: string | null
+          style_preset?: string | null
           target_audience?: string | null
           tokens_used?: number | null
           tone?: string | null
@@ -176,19 +189,21 @@ export type Database = {
         Update: {
           author_style_id?: string | null
           created_at?: string
-          detailed_genre?: string | null
+          current_version_id?: string | null
+          development_structure?: string | null
           doc_type?: string
           id?: string
+          image_mode?: string | null
           input_image_urls?: Json
           input_text?: string | null
           is_public?: boolean
           language?: string | null
           length?: string | null
-          narrative_type_id?: string | null
           output_text?: string | null
           part_number?: number | null
           series_id?: string | null
           style?: string | null
+          style_preset?: string | null
           target_audience?: string | null
           tokens_used?: number | null
           tone?: string | null
@@ -203,10 +218,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "generations_narrative_type_id_fkey"
-            columns: ["narrative_type_id"]
+            foreignKeyName: "generations_current_version_id_fkey"
+            columns: ["current_version_id"]
             isOneToOne: false
-            referencedRelation: "narrative_types"
+            referencedRelation: "generation_versions"
             referencedColumns: ["id"]
           },
           {
@@ -224,33 +239,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      narrative_types: {
-        Row: {
-          core_elements: string | null
-          created_at: string
-          definition: string
-          example_genres: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          core_elements?: string | null
-          created_at?: string
-          definition: string
-          example_genres?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          core_elements?: string | null
-          created_at?: string
-          definition?: string
-          example_genres?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -406,21 +394,23 @@ export type Database = {
     }
     Functions: {
       apply_referral: { Args: { p_referral_code: string }; Returns: Json }
+      charge_credits: { Args: { p_amount: number }; Returns: Json }
       claim_trial: { Args: { p_ip_hash: string }; Returns: Json }
       record_generation: {
         Args: {
           p_author_style_id?: string
-          p_detailed_genre?: string
+          p_development_structure: string
           p_doc_type: string
+          p_image_mode?: string
           p_input_image_urls: Json
           p_input_text: string
           p_language: string
           p_length: string
-          p_narrative_type_id?: string
           p_output_text: string
           p_part_number?: number
           p_series_id?: string
           p_style: string
+          p_style_preset?: string
           p_target_audience: string
           p_tokens_used: number
           p_tone: string
@@ -435,9 +425,17 @@ export type Database = {
           p_action?: string
           p_generation_id: string
           p_output_text: string
+          p_version_type?: string
         }
         Returns: {
           remaining_credits: number
+          version_id: string
+        }[]
+      }
+      revert_generation_version: {
+        Args: { p_generation_id: string; p_version_id: string }
+        Returns: {
+          output_text: string
           version_id: string
         }[]
       }
