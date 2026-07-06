@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import ReactMarkdown from 'react-markdown'
@@ -12,7 +12,13 @@ import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
 import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
 import { exportStructuredDocx } from '@/lib/export'
-import { findDocTypeInfo, DEVELOPMENT_STRUCTURES, stylePresetOptions } from '@/lib/constants'
+import {
+  findDocTypeInfo,
+  findLengthOption,
+  DEVELOPMENT_STRUCTURES,
+  DOC_TYPE_CATEGORIES,
+  stylePresetOptions,
+} from '@/lib/constants'
 import {
   docTypeOptions,
   styleOptions,
@@ -110,6 +116,7 @@ export function GenerationForm() {
   const [finalizeError, setFinalizeError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [docTypeCategory, setDocTypeCategory] = useState<'general' | 'practical'>('general')
 
   async function loadSuggestions(seedGenerationId: string) {
     setSuggestionsLoading(true)
@@ -151,6 +158,28 @@ export function GenerationForm() {
   const docType = watch('docType')
   const docTypeInfo = docType ? findDocTypeInfo(docType) : undefined
   const isLongForm = docTypeInfo?.longForm ?? false
+  const recommendedLengthOption = docTypeInfo ? findLengthOption(docTypeInfo.recommendedLength) : undefined
+  const filteredDocTypeOptions = docTypeOptions.filter(
+    (option) => findDocTypeInfo(option.value)?.category === docTypeCategory,
+  )
+
+  // 템플릿/이어쓰기로 불러온 docType이 있으면 카테고리 버튼도 그 값을 따라간다.
+  useEffect(() => {
+    if (docType) {
+      const info = findDocTypeInfo(docType)
+      if (info) setDocTypeCategory(info.category)
+    }
+  }, [docType])
+
+  // 카테고리를 바꾸면 목록이 완전히 달라지므로, 지금 선택된 글 종류가 새 카테고리에 없으면
+  // 비워서 사용자가 새 목록에서 다시 고르게 한다.
+  function handleSelectCategory(category: 'general' | 'practical') {
+    if (category === docTypeCategory) return
+    setDocTypeCategory(category)
+    if (findDocTypeInfo(docType)?.category !== category) {
+      setValue('docType', '' as GenerationFormValues['docType'])
+    }
+  }
   const selectedAuthorStyleId = watch('authorStyleId')
   const selectedAuthorStyle = authorStyles.find((style) => style.id === selectedAuthorStyleId)
   const developmentStructureKey = watch('developmentStructure')
@@ -434,13 +463,38 @@ export function GenerationForm() {
           </div>
         )}
 
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-semibold text-ink/80">글 종류</label>
+          <div className="flex gap-2">
+            {DOC_TYPE_CATEGORIES.map((category) => (
+              <button
+                key={category.value}
+                type="button"
+                onClick={() => handleSelectCategory(category.value)}
+                className={
+                  docTypeCategory === category.value
+                    ? 'flex-1 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark'
+                    : 'flex-1 rounded-xl border border-line bg-white px-4 py-2 text-sm font-semibold text-ink/60 transition-colors hover:bg-paper'
+                }
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Select
-              label="글 종류"
-              options={[...docTypeOptions]}
+              label={`${DOC_TYPE_CATEGORIES.find((category) => category.value === docTypeCategory)?.label} 목록`}
+              options={filteredDocTypeOptions}
               error={errors.docType?.message}
-              {...register('docType')}
+              {...register('docType', {
+                onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                  const info = findDocTypeInfo(event.target.value)
+                  if (info) setValue('length', info.recommendedLength)
+                },
+              })}
             />
           </div>
           <Select
@@ -461,6 +515,14 @@ export function GenerationForm() {
             <dd>{docTypeInfo.developmentStyle}</dd>
             <dt className="font-semibold text-ink/50">대표 예시</dt>
             <dd>{docTypeInfo.examples}</dd>
+            {recommendedLengthOption && (
+              <>
+                <dt className="font-semibold text-ink/50">추천 분량</dt>
+                <dd>
+                  {recommendedLengthOption.label} ({recommendedLengthOption.charRange})
+                </dd>
+              </>
+            )}
           </dl>
         )}
 

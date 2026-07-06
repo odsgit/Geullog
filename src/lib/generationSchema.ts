@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DOC_TYPE_INFO, findDocTypeInfo } from './constants'
+import { DOC_TYPE_INFO, LENGTH_OPTIONS, findDocTypeInfo } from './constants'
 
 // 글 종류 select 옵션은 constants.ts의 DOC_TYPE_INFO(목적/특징/전개방식/예시가 함께 있는
 // 표)에서 파생시킨다 — 단일 출처 유지.
@@ -30,11 +30,11 @@ export const targetAudienceOptions = [
   { value: 'student', label: '학생' },
 ] as const
 
-export const lengthOptions = [
-  { value: 'short', label: '짧게 (~200자)' },
-  { value: 'medium', label: '보통 (~500자)' },
-  { value: 'long', label: '길게 (~1000자)' },
-] as const
+// 분량 select 옵션도 constants.ts의 LENGTH_OPTIONS(글자 수 구간 표)에서 파생시킨다 — 단일 출처 유지.
+export const lengthOptions = LENGTH_OPTIONS.map((option) => ({
+  value: option.value,
+  label: `${option.label} (${option.charRange})`,
+}))
 
 // Quick-pick defaults. Any other language is typed in freely (see the
 // "직접 입력" toggle in GenerationForm) rather than listed here.

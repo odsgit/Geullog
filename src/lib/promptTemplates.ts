@@ -37,9 +37,12 @@ const targetAudienceInstructions: Record<string, string> = {
 }
 
 const lengthInstructions: Record<string, string> = {
-  short: '약 200자 내외의 짧은 분량으로 작성하세요.',
-  medium: '약 500자 내외의 보통 분량으로 작성하세요.',
-  long: '약 1000자 내외의 긴 분량으로 작성하세요.',
+  ultra_short: '5~30자 내외의 초간결한 분량으로 작성하세요.',
+  short: '100~500자 내외의 짧은 분량으로 작성하세요.',
+  medium: '500~1,000자 내외의 보통 분량으로 작성하세요.',
+  detailed: '1,000~2,000자 내외의 자세한 분량으로 작성하세요.',
+  long: '2,000~5,000자 내외의 긴 분량으로 작성하세요.',
+  very_long: '5,000자 이상의 매우 긴 분량으로 작성하세요.',
 }
 
 const languageInstructions: Record<string, string> = {
