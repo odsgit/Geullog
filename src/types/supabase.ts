@@ -180,6 +180,7 @@ export type Database = {
           style: string | null
           style_preset: string | null
           target_audience: string | null
+          title: string | null
           tokens_used: number | null
           tone: string | null
           user_id: string
@@ -206,6 +207,7 @@ export type Database = {
           style?: string | null
           style_preset?: string | null
           target_audience?: string | null
+          title?: string | null
           tokens_used?: number | null
           tone?: string | null
           user_id: string
@@ -232,6 +234,7 @@ export type Database = {
           style?: string | null
           style_preset?: string | null
           target_audience?: string | null
+          title?: string | null
           tokens_used?: number | null
           tone?: string | null
           user_id?: string

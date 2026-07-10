@@ -127,6 +127,7 @@ export function GenerationForm() {
   // 전체를 한 번에 생성하므로 이 값을 쓰지 않는다.
   const [structureStepIndex, setStructureStepIndex] = useState(0)
   const [isStructureContinuation, setIsStructureContinuation] = useState(false)
+  const [stepTitle, setStepTitle] = useState<string | null>(null)
 
   // 사용자가 입력한 대략적인 주제/키워드를 AI가 더 구체적인 형태로 다듬어서 같은
   // 입력창에 채워 넣는다. 사용자는 결과를 그대로 쓰거나 직접 다시 수정할 수 있다.
@@ -382,6 +383,47 @@ export function GenerationForm() {
       loadSuggestions(generationId)
     }
   }, [status, generationId, continuingFromId, setValue])
+
+  useEffect(() => {
+    if (status === 'streaming') setStepTitle(null)
+  }, [status])
+
+  // 전개 방식(영웅의 여정 등 서사형 구조)으로 쓴 단계는 그 단계 본문 내용을 바탕으로 제목을
+  // 자동으로 지어 붙인다. 실용형 구조는 단계 개념이 없어 제목을 짓지 않는다.
+  useEffect(() => {
+    if (status !== 'done' || !generationId || !isNarrativeStructure || !output) return
+
+    const currentGenerationId = generationId
+    let cancelled = false
+
+    async function generateStepTitle() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session || cancelled) return
+
+      const res = await fetch('/api/suggest-title-from-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ content: output, docType: getValues('docType') || undefined }),
+      })
+      if (!res.ok || cancelled) return
+
+      const { title } = await res.json()
+      if (!title || cancelled) return
+
+      await supabase.from('generations').update({ title }).eq('id', currentGenerationId)
+      if (!cancelled) setStepTitle(title)
+    }
+
+    generateStepTitle()
+    return () => {
+      cancelled = true
+    }
+  }, [status, generationId, isNarrativeStructure, output, getValues])
 
   function handleCancelContinuation() {
     setContinuingFromId(null)
@@ -997,6 +1039,7 @@ export function GenerationForm() {
             initialText={output}
             developmentStructureKey={isNarrativeStructure ? selectedDevelopmentStructure?.key : undefined}
             stepIndex={isNarrativeStructure ? structureStepIndex : undefined}
+            title={isNarrativeStructure ? (stepTitle ?? undefined) : undefined}
           />
         </div>
       ) : (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { AppHeader } from '@/components/AppHeader'
+import { useAuth } from '@/hooks/useAuth'
 import { docTypeOptions } from '@/lib/generationSchema'
 import type { Database } from '@/types/supabase'
 
@@ -12,13 +13,19 @@ const docTypeLabel = new Map<string, string>(
 )
 
 export function HistoryPage() {
+  const { user } = useAuth()
   const [generations, setGenerations] = useState<Generation[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!user) return
+
+    // user_id로 거르지 않으면 "공개 글은 누구나 조회 가능" RLS 정책과 겹쳐 다른 유저가
+    // 공유한 공개 글까지 이 개인 히스토리 목록에 섞여 나온다.
     supabase
       .from('generations')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) {
@@ -27,7 +34,7 @@ export function HistoryPage() {
         }
         setGenerations(data)
       })
-  }, [])
+  }, [user])
 
   return (
     <div className="min-h-svh bg-paper">
@@ -50,7 +57,14 @@ export function HistoryPage() {
                   <span>{docTypeLabel.get(generation.doc_type) ?? generation.doc_type}</span>
                   <span>{new Date(generation.created_at).toLocaleString('ko-KR')}</span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm text-ink">
+                {generation.title && (
+                  <p className="mt-2 text-sm font-semibold text-ink">{generation.title}</p>
+                )}
+                <p
+                  className={`line-clamp-2 text-sm ${
+                    generation.title ? 'mt-1 text-ink/70' : 'mt-2 text-ink'
+                  }`}
+                >
                   {generation.output_text ?? generation.input_text}
                 </p>
               </Link>

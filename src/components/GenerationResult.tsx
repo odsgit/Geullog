@@ -28,6 +28,8 @@ interface GenerationResultProps {
   developmentStructureKey?: string
   /** 방금 이 생성이 쓴 단계의 0-based 인덱스. */
   stepIndex?: number
+  /** 전개 방식 단계별 생성이라면 그 단계 본문 내용을 바탕으로 지은 제목. */
+  title?: string
 }
 
 const actionLabels: Record<ActionMode, string> = {
@@ -42,6 +44,7 @@ export function GenerationResult({
   initialIsPublic = false,
   developmentStructureKey,
   stepIndex,
+  title,
 }: GenerationResultProps) {
   const structure = developmentStructureKey ? findDevelopmentStructure(developmentStructureKey) : undefined
   const nextStepLabel =
@@ -228,6 +231,7 @@ export function GenerationResult({
 
   return (
     <div className="flex flex-col gap-4">
+      {title && <h2 className="font-serif text-xl font-semibold text-ink">{title}</h2>}
       <RichTextEditor ref={editorRef} content={initialText} />
 
       {error && <p className="text-sm text-red-600">{error}</p>}

@@ -73,6 +73,7 @@ export function HistoryDetailPage() {
               generationId={id}
               initialText={initialText}
               initialIsPublic={generation.is_public}
+              title={generation.title ?? undefined}
             />
           </div>
         )}
