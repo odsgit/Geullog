@@ -472,6 +472,8 @@ export function GenerationForm() {
     if (!res.ok) {
       if (res.status === 402) {
         setFinalizeError('크레딧이 부족합니다')
+      } else if (res.status === 412) {
+        setFinalizeError('설정 페이지에서 OpenAI API 키를 먼저 등록해 주세요')
       } else {
         const responseBody = await res.json().catch(() => null)
         setFinalizeError(responseBody?.error ?? `요청에 실패했습니다 (${res.status})`)

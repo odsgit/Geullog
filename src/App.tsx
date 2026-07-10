@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/hooks/useAuth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { RequireApiKey } from '@/components/RequireApiKey'
 import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
 import { HistoryPage } from '@/pages/HistoryPage'
@@ -28,12 +29,14 @@ function App() {
           <Route path="/blog" element={<BlogIndexPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/history/:id" element={<HistoryDetailPage />} />
-            <Route path="/series" element={<SeriesPage />} />
-            <Route path="/series/:id" element={<SeriesDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route element={<RequireApiKey />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/history/:id" element={<HistoryDetailPage />} />
+              <Route path="/series" element={<SeriesPage />} />
+              <Route path="/series/:id" element={<SeriesDetailPage />} />
+            </Route>
           </Route>
         </Routes>
       </AuthProvider>

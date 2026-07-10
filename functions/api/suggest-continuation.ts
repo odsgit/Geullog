@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { resolveOpenAiApiKey } from '../_lib/apiKey'
 
 interface Env {
   OPENAI_API_KEY: string
@@ -32,6 +33,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (userError || !user) {
     return Response.json({ error: 'unauthorized' }, { status: 401 })
   }
+
+  const keyResult = await resolveOpenAiApiKey(supabase, user, context.env.OPENAI_API_KEY)
+  if (!keyResult.ok) return keyResult.response
 
   const body = await context.request.json()
   const parsed = requestSchema.safeParse(body)
@@ -75,7 +79,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const previousText = latestVersion?.output_text ?? sourceGeneration.output_text ?? ''
   const context_ = previousText.length > 4000 ? previousText.slice(-4000) : previousText
 
-  const openai = new OpenAI({ apiKey: context.env.OPENAI_API_KEY })
+  const openai = new OpenAI({ apiKey: keyResult.apiKey })
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',

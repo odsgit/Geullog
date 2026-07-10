@@ -48,6 +48,8 @@ export function useGeneration() {
     if (!res.ok || !res.body) {
       if (res.status === 402) {
         setError('크레딧이 부족합니다')
+      } else if (res.status === 412) {
+        setError('설정 페이지에서 OpenAI API 키를 먼저 등록해 주세요')
       } else {
         const body = await res.json().catch(() => null)
         setError(body?.error ?? `요청에 실패했습니다 (${res.status})`)

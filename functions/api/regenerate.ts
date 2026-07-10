@@ -2,6 +2,7 @@ import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { regenerateRequestSchema, type GenerationFormValues } from '../../src/lib/generationSchema'
 import { buildPrompt, NO_MARKDOWN_INSTRUCTION } from '../../src/lib/promptTemplates'
+import { resolveOpenAiApiKey } from '../_lib/apiKey'
 
 interface Env {
   OPENAI_API_KEY: string
@@ -34,6 +35,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return Response.json({ error: 'unauthorized' }, { status: 401 })
   }
 
+  const keyResult = await resolveOpenAiApiKey(supabase, user, context.env.OPENAI_API_KEY)
+  if (!keyResult.ok) return keyResult.response
+
   const body = await context.request.json()
   const parsed = regenerateRequestSchema.safeParse(body)
   if (!parsed.success) {
@@ -63,7 +67,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return Response.json({ error: 'insufficient_credits' }, { status: 402 })
   }
 
-  const openai = new OpenAI({ apiKey: context.env.OPENAI_API_KEY })
+  const openai = new OpenAI({ apiKey: keyResult.apiKey })
 
   const encoder = new TextEncoder()
   let fullText = ''

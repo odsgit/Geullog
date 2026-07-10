@@ -275,6 +275,7 @@ export type Database = {
           created_at: string
           credits: number
           id: string
+          openai_api_key: string | null
           referral_code: string
           referred_by: string | null
           updated_at: string
@@ -283,6 +284,7 @@ export type Database = {
           created_at?: string
           credits?: number
           id: string
+          openai_api_key?: string | null
           referral_code: string
           referred_by?: string | null
           updated_at?: string
@@ -291,6 +293,7 @@ export type Database = {
           created_at?: string
           credits?: number
           id?: string
+          openai_api_key?: string | null
           referral_code?: string
           referred_by?: string | null
           updated_at?: string
