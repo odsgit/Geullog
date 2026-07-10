@@ -1,0 +1,78 @@
+import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+
+interface Env {
+  OPENAI_API_KEY: string
+  SUPABASE_URL: string
+  SUPABASE_ANON_KEY: string
+}
+
+const requestSchema = z.object({
+  topic: z.string().trim().min(1),
+  docType: z.string().trim().optional(),
+})
+
+// 확정된 주제/키워드를 근거로 글 제목을 하나 제안한다. 실제 글을 생성하는 액션이 아니라
+// 입력을 도와주는 가벼운 보조 기능이라 크레딧을 차감하지 않는다.
+export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const authHeader = context.request.headers.get('Authorization')
+  if (!authHeader) {
+    return Response.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
+  const supabase = createClient(context.env.SUPABASE_URL, context.env.SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  })
+
+  const token = authHeader.replace('Bearer ', '')
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser(token)
+
+  if (userError || !user) {
+    return Response.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
+  const body = await context.request.json()
+  const parsed = requestSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: 'invalid_request', details: parsed.error.flatten() },
+      { status: 400 },
+    )
+  }
+
+  const openai = new OpenAI({ apiKey: context.env.OPENAI_API_KEY })
+
+  const docTypeLine = parsed.data.docType ? `\n[글 종류]\n${parsed.data.docType}` : ''
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content:
+          '당신은 카피라이터입니다. 주어진 주제/키워드를 근거로 독자의 흥미를 끄는 글 제목을 하나 ' +
+          '제안하세요. 제목은 20자 내외로 간결하되 핵심 내용이 드러나야 합니다. 다음 JSON 형식으로만 ' +
+          '응답하세요: {"title": "..."}',
+      },
+      {
+        role: 'user',
+        content: `[주제/키워드]\n${parsed.data.topic}${docTypeLine}`,
+      },
+    ],
+  })
+
+  const raw = response.choices[0]?.message?.content ?? '{}'
+  let parsedResult: { title?: string }
+  try {
+    parsedResult = JSON.parse(raw)
+  } catch {
+    return Response.json({ error: 'suggestion_parse_failed' }, { status: 502 })
+  }
+
+  return Response.json({ title: parsedResult.title ?? '' })
+}

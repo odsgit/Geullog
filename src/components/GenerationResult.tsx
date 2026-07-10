@@ -4,7 +4,8 @@ import { RichTextEditor, type RichTextEditorHandle } from '@/components/RichText
 import { VersionTimeline } from '@/components/VersionTimeline'
 import { exportAsTxt, exportAsDocx } from '@/lib/export'
 import { trackEvent } from '@/lib/analytics'
-import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
+import { writeContinuePayload } from '@/lib/continuationStorage'
+import { findDevelopmentStructure } from '@/lib/constants'
 import type { Database } from '@/types/supabase'
 
 type GenerationVersion = Database['public']['Tables']['generation_versions']['Row']
@@ -23,6 +24,10 @@ interface GenerationResultProps {
   generationId: string
   initialText: string
   initialIsPublic?: boolean
+  /** 서사형 전개 방식으로 생성했다면 그 구조의 key — "다음 단계 쓰기" 버튼 노출 여부를 결정한다. */
+  developmentStructureKey?: string
+  /** 방금 이 생성이 쓴 단계의 0-based 인덱스. */
+  stepIndex?: number
 }
 
 const actionLabels: Record<ActionMode, string> = {
@@ -35,7 +40,15 @@ export function GenerationResult({
   generationId,
   initialText,
   initialIsPublic = false,
+  developmentStructureKey,
+  stepIndex,
 }: GenerationResultProps) {
+  const structure = developmentStructureKey ? findDevelopmentStructure(developmentStructureKey) : undefined
+  const nextStepLabel =
+    structure && stepIndex !== undefined && stepIndex + 1 < structure.structureSteps.length
+      ? structure.structureSteps[stepIndex + 1]
+      : null
+
   const editorRef = useRef<RichTextEditorHandle>(null)
   const [busy, setBusy] = useState<ActionMode | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -200,10 +213,16 @@ export function GenerationResult({
   }
 
   function handleContinue() {
-    localStorage.setItem(CONTINUE_STORAGE_KEY, generationId)
+    writeContinuePayload({ generationId })
     // Hard navigation: this result can already be rendered on "/" itself
     // (right after generating), and react-router's navigate('/') is a no-op
     // there, so GenerationForm would never remount to pick up localStorage.
+    window.location.href = '/'
+  }
+
+  function handleContinueStep() {
+    if (stepIndex === undefined) return
+    writeContinuePayload({ generationId, stepIndex: stepIndex + 1 })
     window.location.href = '/'
   }
 
@@ -230,6 +249,11 @@ export function GenerationResult({
           </button>
         ))}
         <div className="mx-1 h-full w-px self-stretch bg-line" />
+        {nextStepLabel && (
+          <button type="button" onClick={handleContinueStep} className="btn-sm">
+            {nextStepLabel} 쓰기
+          </button>
+        )}
         <button type="button" onClick={handleContinue} className="btn-sm">
           이어서 쓰기
         </button>

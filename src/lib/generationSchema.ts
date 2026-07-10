@@ -55,6 +55,7 @@ function valuesOf<T extends { value: string }>(options: readonly T[]) {
 const baseGenerationFormSchema = z.object({
   // 필수 4개 — 이것만 채워도 바로 생성 가능해야 한다.
   inputText: z.string().trim().min(1, '주제나 키워드를 입력해주세요'),
+  title: z.string().trim().optional(),
   docType: z.enum(valuesOf(docTypeOptions), { message: '글 종류를 선택해주세요' }),
   targetAudience: z.enum(valuesOf(targetAudienceOptions), {
     message: '타겟 독자를 선택해주세요',
@@ -72,6 +73,10 @@ const baseGenerationFormSchema = z.object({
   language: z.string().trim().optional(),
   inputImageUrls: z.array(z.string()),
   developmentStructure: z.string().optional(),
+  // 서사형(비실용) 전개 방식을 고르면, 지금 이 생성이 그 구조의 어느 단계(예: "본론")를
+  // 쓰는 중인지를 담는다 — 있으면 buildPrompt가 전체 구조 대신 이 단계 하나만 쓰도록 지시한다.
+  developmentStep: z.string().optional(),
+  novelGenre: z.string().optional(),
   authorStyleId: z.string().optional(),
   stylePreset: z.string().optional(),
   imageMode: z.enum(['ocr', 'describe']).optional(),

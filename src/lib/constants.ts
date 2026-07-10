@@ -402,6 +402,139 @@ export function findDocTypeInfo(value: string) {
   return DOC_TYPE_INFO.find((info) => info.value === value)
 }
 
+export interface NovelGenre {
+  value: string
+  label: string
+  description: string
+}
+
+export interface NovelGenreGroup {
+  category: string
+  genres: NovelGenre[]
+}
+
+// 소설 장르를 고르면 아래 설명이 표시되도록 한다 — 글 종류에서 "소설"을 선택했을 때만 노출.
+export const NOVEL_GENRES: NovelGenreGroup[] = [
+  {
+    category: '미스터리 · 스릴러 계열',
+    genres: [
+      {
+        value: 'whodunit',
+        label: '본격 추리 (Whodunit / Cozy Mystery)',
+        description:
+          '독자와 작가의 두뇌 싸움. 단서의 공정한 배치와 논리적 해체(트릭)가 핵심입니다. 폭력성은 낮고 지적 유희가 강합니다.',
+      },
+      {
+        value: 'hardboiled',
+        label: '하드보일드 (Hard-boiled)',
+        description:
+          "감정을 배제하고 냉혹한 현실을 있는 그대로 묘사합니다. 주로 부패한 도시, 냉소적인 탐정이 등장하며 '수수께끼 해결'보다 '사회의 추악한 면'을 폭로하는 데 집중합니다.",
+      },
+      {
+        value: 'psychological_thriller',
+        label: '심리 스릴러 (Psychological Thriller)',
+        description:
+          "범인의 정체보다 인물의 '불안정한 심리 상태'와 '신뢰할 수 없는 화자(Unreliable Narrator)'를 통해 독자의 숨을 조입니다.",
+      },
+      {
+        value: 'techno_thriller',
+        label: '테크노 스릴러 (Techno-thriller)',
+        description:
+          '첨단 기술, 군사, 첩보가 결합된 장르로, 기술적 고증의 정밀함이 서사의 개연성을 담보합니다.',
+      },
+    ],
+  },
+  {
+    category: 'SF 계열',
+    genres: [
+      {
+        value: 'hard_sf',
+        label: '하드 SF (Hard SF)',
+        description:
+          '물리학, 천문학, 화학 등 실제 자연과학적 고증에 엄격합니다. 설정의 오류가 장르적 치명타가 됩니다.',
+      },
+      {
+        value: 'soft_sf',
+        label: '소프트 SF / 스페이스 오페라 (Soft SF / Space Opera)',
+        description:
+          '과학적 엄밀함보다는 인문학적 질문(사회학, 심리학)이나 우주를 배경으로 한 거대한 서사시(스타워즈 등)에 집중합니다. 사실상 우주 외피를 두른 판타지에 가깝습니다.',
+      },
+      {
+        value: 'cyberpunk',
+        label: '사이버펑크 (Cyberpunk)',
+        description:
+          '"High Tech, Low Life(고도의 기술, 비참한 삶)"로 요약됩니다. 거대 기업의 지배, 정보화된 인간, 암울한 디스토피아를 다룹니다.',
+      },
+      {
+        value: 'post_apocalypse',
+        label: '포스트 아포칼립스 (Post-Apocalypse)',
+        description:
+          '문명이 멸망한 이후의 세계를 다루며, 인간의 본성과 생존 본능을 극단으로 몰아붙이는 실험장 역할을 합니다.',
+      },
+    ],
+  },
+  {
+    category: '판타지 계열',
+    genres: [
+      {
+        value: 'high_fantasy',
+        label: '하이 판타지 (High / Epic Fantasy)',
+        description:
+          '완전히 새로운 독자적인 세계관, 고유의 역사, 종족, 마법 체계가 존재합니다. 거대한 선악의 대립이나 세계의 운명을 다룹니다.',
+      },
+      {
+        value: 'low_fantasy',
+        label: '로우 판타지 (Low / Urban Fantasy)',
+        description:
+          '우리가 사는 현실 세계를 배경으로 하되, 그 이면에 마법이나 초자연적 존재가 숨겨져 있다는 설정입니다. 현실의 규칙과 마법의 충돌이 흥미 요소입니다.',
+      },
+      {
+        value: 'dark_fantasy',
+        label: '다크 판타지 (Dark Fantasy)',
+        description:
+          '판타지에 공포(Horror) 요소를 결합하여, 잔혹하고 암울한 분위기와 도덕적 회색지대에 있는 인물들을 다룹니다.',
+      },
+    ],
+  },
+  {
+    category: '문학 · 실험 계열',
+    genres: [
+      {
+        value: 'bildungsroman',
+        label: '교양 소설 (Bildungsroman)',
+        description:
+          '주인공의 유년기부터 성년에 이르기까지, 정신적·도덕적 성장과 상실을 다루는 성장 소설의 정수입니다.',
+      },
+      {
+        value: 'magical_realism',
+        label: '마술적 리얼리즘 (Magical Realism)',
+        description:
+          '현실적인 배경 속에 초자연적인 사건이 아무렇지도 않게 녹아들어 있는 형태입니다. 환상을 통해 오히려 현실의 모순이나 역사의 비극을 더 날카롭게 폭로합니다.',
+      },
+      {
+        value: 'alternate_history',
+        label: '대체 역사 소설 (Alternate History)',
+        description:
+          '"실제 역사 속의 특정 사건이 다른 결과를 낳았다면?"이라는 가상에서 출발하여, 사회적·정치적 인과관계를 치밀하게 추적합니다.',
+      },
+      {
+        value: 'metafiction',
+        label: '메타 픽션 (Metafiction)',
+        description:
+          '소설이 스스로 소설임을 드러내는 기법입니다. 독자에게 이것이 허구임을 끊임없이 자각시키며, 진실과 허구의 경계를 무너뜨리는 지적 비판성을 가집니다.',
+      },
+    ],
+  },
+]
+
+export function findNovelGenre(value: string) {
+  for (const group of NOVEL_GENRES) {
+    const found = group.genres.find((genre) => genre.value === value)
+    if (found) return found
+  }
+  return undefined
+}
+
 export const stylePresetOptions = [
   { value: 'concise', label: '간결체' },
   { value: 'lyrical', label: '서정체' },
@@ -470,9 +603,23 @@ export const DEVELOPMENT_STRUCTURES: DevelopmentStructure[] = [
   },
   {
     key: 'heros_journey',
-    label: '영웅의 여정',
-    description: '평범한 일상에서 모험을 떠나 시련을 겪고 변화해 돌아오는 구조. 성장 서사에 적합합니다.',
-    structureSteps: ['평범한 일상', '모험의 부름', '시련과 변화', '귀환'],
+    label: '영웅의 여정 (12단계)',
+    description:
+      '평범한 일상에서 소명을 받아 모험을 떠나 죽음에 맞먹는 시련을 겪고 변화해 돌아오는 12단계 원형 서사. 성장 서사와 대하소설에 적합합니다.',
+    structureSteps: [
+      '일상 세계',
+      '모험에의 소명',
+      '소명의 거부',
+      '정신적 스승과의 만남',
+      '첫 관문의 통과',
+      '시험, 동료, 적',
+      '동굴 가장 깊은 곳으로의 접근',
+      '시련',
+      '보상',
+      '귀환의 길',
+      '부활',
+      '영약을 가지고 귀환',
+    ],
     practical: false,
   },
   {

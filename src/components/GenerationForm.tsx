@@ -10,13 +10,16 @@ import { useGeneration } from '@/hooks/useGeneration'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { TEMPLATE_STORAGE_KEY } from '@/lib/templateStorage'
-import { CONTINUE_STORAGE_KEY } from '@/lib/continuationStorage'
+import { CONTINUE_STORAGE_KEY, readContinuePayload } from '@/lib/continuationStorage'
 import { exportStructuredDocx } from '@/lib/export'
 import {
   findDocTypeInfo,
   findLengthOption,
+  findDevelopmentStructure,
+  findNovelGenre,
   DEVELOPMENT_STRUCTURES,
   DOC_TYPE_CATEGORIES,
+  NOVEL_GENRES,
   stylePresetOptions,
 } from '@/lib/constants'
 import {
@@ -117,6 +120,77 @@ export function GenerationForm() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const [docTypeCategory, setDocTypeCategory] = useState<'general' | 'practical'>('general')
+  const [topicGenerating, setTopicGenerating] = useState(false)
+  const [titleGenerating, setTitleGenerating] = useState(false)
+  // 서사형 전개 방식(기승전결/소설5단/영웅의여정 등)을 단계별로 순차 생성할 때, 지금까지
+  // 이 시리즈에서 몇 번째 단계까지 썼는지 추적한다. 실용형 구조(3단구성 등)는 여전히
+  // 전체를 한 번에 생성하므로 이 값을 쓰지 않는다.
+  const [structureStepIndex, setStructureStepIndex] = useState(0)
+  const [isStructureContinuation, setIsStructureContinuation] = useState(false)
+
+  // 사용자가 입력한 대략적인 주제/키워드를 AI가 더 구체적인 형태로 다듬어서 같은
+  // 입력창에 채워 넣는다. 사용자는 결과를 그대로 쓰거나 직접 다시 수정할 수 있다.
+  async function handleGenerateTopic() {
+    const inputText = getValues('inputText').trim()
+    if (!inputText) return
+
+    setTopicGenerating(true)
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      setTopicGenerating(false)
+      return
+    }
+
+    const res = await fetch('/api/suggest-topic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ inputText }),
+    })
+
+    setTopicGenerating(false)
+    if (!res.ok) return
+
+    const { topic } = await res.json()
+    if (topic) setValue('inputText', topic)
+  }
+
+  // 확정된 주제/키워드를 근거로 제목을 하나 생성해 제목 입력창에 채워 넣는다. 마음에
+  // 들지 않으면 다시 눌러 재생성하거나 직접 수정할 수 있다.
+  async function handleGenerateTitle() {
+    const topic = getValues('inputText').trim()
+    if (!topic) return
+
+    setTitleGenerating(true)
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      setTitleGenerating(false)
+      return
+    }
+
+    const res = await fetch('/api/suggest-title', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ topic, docType: getValues('docType') || undefined }),
+    })
+
+    setTitleGenerating(false)
+    if (!res.ok) return
+
+    const { title } = await res.json()
+    if (title) setValue('title', title)
+  }
 
   async function loadSuggestions(seedGenerationId: string) {
     setSuggestionsLoading(true)
@@ -186,7 +260,17 @@ export function GenerationForm() {
   const selectedDevelopmentStructure = DEVELOPMENT_STRUCTURES.find(
     (structure) => structure.key === developmentStructureKey,
   )
+  const isNarrativeStructure = selectedDevelopmentStructure ? !selectedDevelopmentStructure.practical : false
+  const novelGenreValue = watch('novelGenre')
+  const selectedNovelGenre = novelGenreValue ? findNovelGenre(novelGenreValue) : undefined
   const imageUrls = watch('inputImageUrls')
+
+  // 소설이 아닌 글 종류로 바꾸면 남아있던 소설 장르 선택은 의미가 없으니 비운다.
+  useEffect(() => {
+    if (docType !== 'novel') {
+      setValue('novelGenre', undefined)
+    }
+  }, [docType, setValue])
 
   // author_style과 style_preset은 장문 문학 유형(수필/소설/희곡/시나리오/기행문) 여부에
   // 따라 서로 배타적으로 노출되므로, 전환되면 반대쪽 필드는 즉시 비워서 숨겨진 값이
@@ -229,21 +313,31 @@ export function GenerationForm() {
   }, [reset])
 
   useEffect(() => {
-    const continueId = localStorage.getItem(CONTINUE_STORAGE_KEY)
-    if (!continueId) return
+    const payload = readContinuePayload()
+    if (!payload) return
+    const { generationId: continueId, stepIndex } = payload
 
     supabase
       .from('generations')
       .select(
-        'doc_type, style, tone, target_audience, length, language, author_style_id, style_preset, development_structure, additional_instruction, seo_keywords, output_format',
+        'input_text, doc_type, style, tone, target_audience, length, language, author_style_id, style_preset, development_structure, additional_instruction, seo_keywords, output_format',
       )
       .eq('id', continueId)
       .single()
       .then(({ data }) => {
         if (data) {
           const language = data.language ?? 'ko'
+          const structure = data.development_structure
+            ? findDevelopmentStructure(data.development_structure)
+            : undefined
+          // stepIndex는 "다음 단계 쓰기" 버튼을 눌렀을 때만 온다 — 그 경우 원래 주제는
+          // 그대로 이어받고, 자유 입력 대신 정해진 다음 단계를 자동으로 지정한다.
+          const nextStep = stepIndex !== undefined && structure ? structure.structureSteps[stepIndex] : undefined
+          const structureContinuation = nextStep !== undefined
+
           reset({
-            inputText: '',
+            inputText: structureContinuation ? (data.input_text ?? '') : '',
+            title: undefined,
             docType: (data.doc_type ?? docTypeOptions[0].value) as GenerationFormValues['docType'],
             style: data.style ?? undefined,
             tone: data.tone ?? undefined,
@@ -255,6 +349,7 @@ export function GenerationForm() {
             authorStyleId: data.author_style_id ?? undefined,
             stylePreset: data.style_preset ?? undefined,
             developmentStructure: data.development_structure ?? undefined,
+            developmentStep: nextStep,
             additionalInstruction: data.additional_instruction ?? undefined,
             seoKeywords: data.seo_keywords?.length ? data.seo_keywords.join(', ') : undefined,
             outputFormat: data.output_format ?? undefined,
@@ -262,8 +357,13 @@ export function GenerationForm() {
           })
           setUseCustomLanguage(language !== 'ko' && language !== 'en')
           setContinuingFromId(continueId)
+          setIsStructureContinuation(structureContinuation)
           loadSeriesParts(continueId).then(setSeriesParts)
-          loadSuggestions(continueId)
+          if (structureContinuation && stepIndex !== undefined) {
+            setStructureStepIndex(stepIndex)
+          } else {
+            loadSuggestions(continueId)
+          }
         }
         localStorage.removeItem(CONTINUE_STORAGE_KEY)
       })
@@ -289,10 +389,14 @@ export function GenerationForm() {
     setExpandedPartId(null)
     setSuggestions([])
     setUseCustomLanguage(false)
+    setIsStructureContinuation(false)
+    setStructureStepIndex(0)
     reset({
       inputText: '',
+      title: undefined,
       inputImageUrls: [],
       authorStyleId: undefined,
+      developmentStep: undefined,
       continueFromGenerationId: undefined,
     })
   }
@@ -432,18 +536,69 @@ export function GenerationForm() {
         )}
 
         {/* Step 1: 필수 입력 — 이것만 채워도 바로 생성 가능 */}
-        <TextArea
-          label={continuingFromId ? '다음 내용 지시' : '주제 / 키워드'}
-          placeholder={
-            continuingFromId
-              ? '예: 이제 주인공이 마을을 떠나는 장면을 이어서 써주세요'
-              : '예: 여름 휴가지로 제주도를 추천하는 이유'
-          }
-          error={errors.inputText?.message}
-          {...register('inputText')}
-        />
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="inputText" className="text-sm font-semibold text-ink/80">
+              {continuingFromId && !isStructureContinuation ? '다음 내용 지시' : '주제 / 키워드'}
+            </label>
+            {!continuingFromId && (
+              <button
+                type="button"
+                onClick={handleGenerateTopic}
+                disabled={topicGenerating || !watch('inputText')?.trim()}
+                className="btn-sm"
+              >
+                {topicGenerating ? '생성 중...' : 'AI로 다듬기'}
+              </button>
+            )}
+          </div>
+          <textarea
+            id="inputText"
+            rows={4}
+            placeholder={
+              continuingFromId
+                ? '예: 이제 주인공이 마을을 떠나는 장면을 이어서 써주세요'
+                : '예: 여름 휴가지로 제주도를 추천하는 이유'
+            }
+            className={`input resize-y ${errors.inputText ? 'border-red-400' : ''}`}
+            {...register('inputText')}
+          />
+          {errors.inputText && <p className="text-sm text-red-600">{errors.inputText.message}</p>}
+          {isStructureContinuation && watch('developmentStep') && (
+            <p className="text-xs text-ink/50">
+              이번에는 <strong className="text-ink/80">{watch('developmentStep')}</strong> 단계를
+              작성합니다.
+            </p>
+          )}
+        </div>
 
-        {continuingFromId && (suggestionsLoading || suggestions.length > 0) && (
+        {!continuingFromId && (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label htmlFor="title" className="text-sm font-semibold text-ink/80">
+                제목 (선택)
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateTitle}
+                disabled={titleGenerating || !watch('inputText')?.trim()}
+                className="btn-sm"
+              >
+                {titleGenerating ? '생성 중...' : watch('title') ? '다시 생성' : '제목 생성'}
+              </button>
+            </div>
+            <input
+              id="title"
+              type="text"
+              placeholder="주제/키워드를 정한 뒤 생성 버튼을 눌러보세요"
+              className={`input ${errors.title ? 'border-red-400' : ''}`}
+              {...register('title')}
+            />
+            {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
+          </div>
+        )}
+
+        {continuingFromId && !isStructureContinuation && (suggestionsLoading || suggestions.length > 0) && (
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-ink/50">
               {suggestionsLoading ? '다음 내용을 추천하고 있어요...' : '이런 방향은 어떨까요?'}
@@ -566,6 +721,26 @@ export function GenerationForm() {
               )}
             />
 
+            {docType === 'novel' && (
+              <div className="flex flex-col gap-1.5">
+                <Select
+                  label="소설 장르 (선택)"
+                  placeholder="선택 안 함"
+                  options={NOVEL_GENRES.flatMap((group) =>
+                    group.genres.map((genre) => ({
+                      value: genre.value,
+                      label: `[${group.category}] ${genre.label}`,
+                    })),
+                  )}
+                  error={errors.novelGenre?.message}
+                  {...register('novelGenre')}
+                />
+                {selectedNovelGenre && (
+                  <p className="text-xs text-ink/50">{selectedNovelGenre.description}</p>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <Select
                 label="전개 방식 (선택)"
@@ -575,10 +750,46 @@ export function GenerationForm() {
                   label: structure.label,
                 }))}
                 error={errors.developmentStructure?.message}
-                {...register('developmentStructure')}
+                {...register('developmentStructure', {
+                  onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                    const structure = findDevelopmentStructure(event.target.value)
+                    if (structure && !structure.practical) {
+                      setValue('developmentStep', structure.structureSteps[0])
+                    } else {
+                      setValue('developmentStep', undefined)
+                    }
+                    setStructureStepIndex(0)
+                  },
+                })}
               />
               {selectedDevelopmentStructure && (
                 <p className="text-xs text-ink/50">{selectedDevelopmentStructure.description}</p>
+              )}
+              {isNarrativeStructure && !continuingFromId && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold text-ink/50">
+                    먼저 작성할 단계를 골라주세요
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedDevelopmentStructure!.structureSteps.map((step, index) => (
+                      <button
+                        key={step}
+                        type="button"
+                        onClick={() => {
+                          setValue('developmentStep', step)
+                          setStructureStepIndex(index)
+                        }}
+                        className={
+                          watch('developmentStep') === step
+                            ? 'rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white'
+                            : 'rounded-full border border-line bg-white px-3 py-1 text-xs text-ink/60 hover:bg-paper'
+                        }
+                      >
+                        {step}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -747,9 +958,11 @@ export function GenerationForm() {
             ? '사진 분석 중...'
             : status === 'streaming'
               ? '생성 중...'
-              : continuingFromId
-                ? '이어서 쓰기'
-                : '글 생성하기'}
+              : isStructureContinuation && watch('developmentStep')
+                ? `${watch('developmentStep')} 쓰기`
+                : continuingFromId
+                  ? '이어서 쓰기'
+                  : '글 생성하기'}
         </button>
 
         {showTemplateTitleInput ? (
@@ -778,7 +991,13 @@ export function GenerationForm() {
 
       {status === 'done' && generationId ? (
         <div className="card p-8">
-          <GenerationResult key={generationId} generationId={generationId} initialText={output} />
+          <GenerationResult
+            key={generationId}
+            generationId={generationId}
+            initialText={output}
+            developmentStructureKey={isNarrativeStructure ? selectedDevelopmentStructure?.key : undefined}
+            stepIndex={isNarrativeStructure ? structureStepIndex : undefined}
+          />
         </div>
       ) : (
         (output || status === 'error' || status === 'analyzing_image') && (

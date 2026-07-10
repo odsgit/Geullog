@@ -1,5 +1,5 @@
 import type { GenerationFormValues } from './generationSchema'
-import { findDevelopmentStructure, findDocTypeInfo, type DevelopmentStructure } from './constants'
+import { findDevelopmentStructure, findDocTypeInfo, findNovelGenre, type DevelopmentStructure } from './constants'
 
 // DOC_TYPE_INFO(글 종류별 목적/특징/전개방식 표)에서 지시문을 직접 만들어낸다 — 글 종류
 // 20종 각각에 지시문을 따로 하드코딩하지 않고 단일 출처(constants.ts)에서 파생시킨다(DRY).
@@ -79,6 +79,20 @@ function developmentStructureInstruction(structure: DevelopmentStructure, forceP
   return `${common} 소제목은 사용하지 말고, 단락 구분(빈 줄)만으로 전환을 표현하세요.`
 }
 
+// 서사형(비실용) 전개 방식의 특정 단계 하나만 순차적으로 생성할 때 쓰는 지시. 전체 구조를
+// 한 번에 다 반영하라는 developmentStructureInstruction과 달리, 지금 단계 외의 앞뒤 내용은
+// 언급하지 말라고 명시해 다음 단계 생성 시 내용이 중복되지 않게 한다.
+function singleStepInstruction(structure: DevelopmentStructure, stepLabel: string): string {
+  const stepIndex = structure.structureSteps.indexOf(stepLabel)
+  const position =
+    stepIndex >= 0 ? `(전체 ${structure.structureSteps.length}단계 중 ${stepIndex + 1}번째)` : ''
+  return (
+    `당신은 [${structure.label}] 전개 방식의 '${stepLabel}' 단계${position}만 작성해야 합니다. ` +
+    '이전 단계의 내용을 반복해서 요약하거나 이후 단계의 내용을 미리 쓰지 말고, 이 단계에 해당하는 ' +
+    '내용만 충실하게 작성하세요.'
+  )
+}
+
 interface AuthorStyleInfo {
   description: string
   tier: string
@@ -104,6 +118,7 @@ export function buildPrompt(
   const structure = input.developmentStructure
     ? findDevelopmentStructure(input.developmentStructure)
     : undefined
+  const novelGenre = input.novelGenre ? findNovelGenre(input.novelGenre) : undefined
   const isPlainFormat = input.outputFormat === 'plain'
   const seoKeywords = input.seoKeywords
     ?.split(',')
@@ -119,9 +134,17 @@ export function buildPrompt(
     targetAudienceInstructions[input.targetAudience],
     input.length ? lengthInstructions[input.length] : null,
     languageInstruction(input.language),
-    structure ? developmentStructureInstruction(structure, isPlainFormat) : null,
+    structure
+      ? input.developmentStep
+        ? singleStepInstruction(structure, input.developmentStep)
+        : developmentStructureInstruction(structure, isPlainFormat)
+      : null,
     isPlainFormat ? NO_MARKDOWN_INSTRUCTION : null,
     authorStyle ? authorStyleInstruction(authorStyle) : null,
+    novelGenre
+      ? `다음 소설 장르의 특성을 반영해서 작성하세요: [${novelGenre.label}] ${novelGenre.description}`
+      : null,
+    input.title ? `글 제목은 "${input.title}"입니다. 이 제목의 내용과 일치하도록 작성하세요.` : null,
     seoKeywords?.length ? `다음 SEO 키워드를 문맥에 자연스럽게 포함하세요: ${seoKeywords.join(', ')}` : null,
     input.additionalInstruction ? `추가 요청사항: ${input.additionalInstruction}` : null,
     continuationContext
