@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/hooks/useAuth'
+import { useSmoothScroll } from '@/hooks/useSmoothScroll'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { RequireApiKey } from '@/components/RequireApiKey'
 import { LoginPage } from '@/pages/LoginPage'
@@ -17,6 +18,8 @@ import { BlogPostPage } from '@/pages/BlogPostPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 
 function App() {
+  useSmoothScroll()
+
   return (
     <BrowserRouter>
       <AuthProvider>

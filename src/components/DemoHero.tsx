@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useTrialGeneration } from '@/hooks/useTrialGeneration'
 import { TRIAL_USED_KEY } from '@/lib/trialStorage'
 import type { GenerationFormValues } from '@/lib/generationSchema'
@@ -23,6 +24,7 @@ export function DemoHero() {
   const alreadyTried =
     typeof window !== 'undefined' && localStorage.getItem(TRIAL_USED_KEY) === 'true'
   const { output, status, error, generate } = useTrialGeneration()
+  const shouldReduceMotion = useReducedMotion()
 
   async function handleGenerate() {
     if (!topic.trim()) return
@@ -37,7 +39,12 @@ export function DemoHero() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div
+      className="flex flex-col gap-6"
+      initial={shouldReduceMotion ? undefined : { opacity: 0, y: 16 }}
+      animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
       <div>
         <h1 className="font-serif text-3xl leading-tight font-semibold text-ink sm:text-4xl">
           AI가 완성하는
@@ -103,6 +110,6 @@ export function DemoHero() {
           </>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }

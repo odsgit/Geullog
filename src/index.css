@@ -7,6 +7,16 @@
   --color-accent: #c1552f;
   --color-accent-dark: #9c4325;
   --color-line: #e7ddcf;
+  --animate-marquee: marquee 28s linear infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 :root {
